@@ -20,7 +20,7 @@ export function Dashboard() {
         </div>
         <div className="mt-6 rounded-lg bg-blue-50 p-4">
           <p className="text-sm text-blue-800">
-            Rol: {profile?.role}
+            Rol: {profile?.role?.name}
           </p>
         </div>
       </div>
