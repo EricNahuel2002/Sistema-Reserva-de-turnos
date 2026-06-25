@@ -5,6 +5,8 @@ import { SubmitButton } from '../components/ui/SubmitButton'
 
 export function Register() {
   const { signUp } = useAuth()
+  const [fullName, setFullName] = useState('')
+  const [dni, setDni] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,7 +17,7 @@ export function Register() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signUp(email, password)
+    const { error } = await signUp(email, password, fullName, dni)
     if (error) {
       setError(error.message)
     } else {
@@ -47,6 +49,26 @@ export function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nombre completo</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">DNI</label>
+            <input
+              type="text"
+              value={dni}
+              onChange={(e) => setDni(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
