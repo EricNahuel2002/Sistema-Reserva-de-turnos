@@ -68,3 +68,7 @@ src/
 ├── main.tsx       # Punto de entrada
 └── index.css      # Estilos globales (Tailwind)
 ```
+
+Diagrama de base entidad-relacion utilizada
+<img width="1538" height="807" alt="supabase-schema-ttlwyiezvugspqwfkcxj" src="https://github.com/user-attachments/assets/9e3d7c0e-f6d9-4e4c-964c-abfe92106eac" />
+

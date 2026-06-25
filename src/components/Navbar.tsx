@@ -4,7 +4,7 @@ import { Calendar, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 export function Navbar() {
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -20,6 +20,7 @@ export function Navbar() {
               <Link to="/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600">
                 Dashboard
               </Link>
+              <span className="text-sm text-gray-500">{profile?.full_name}</span>
               <button
                 onClick={signOut}
                 className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600"

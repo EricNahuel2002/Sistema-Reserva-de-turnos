@@ -1,41 +1,29 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { SubmitButton } from '../components/ui/SubmitButton'
 
 export function Register() {
   const { signUp } = useAuth()
+  const navigate = useNavigate()
+  const [fullName, setFullName] = useState('')
+  const [dni, setDni] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signUp(email, password)
+    const { error } = await signUp(email, password, fullName, dni)
     if (error) {
       setError(error.message)
     } else {
-      setSuccess(true)
+      navigate('/dashboard')
     }
     setLoading(false)
-  }
-
-  if (success) {
-    return (
-      <div className="flex min-h-[80vh] items-center justify-center px-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Registro exitoso</h2>
-          <p className="mt-2 text-gray-600">Revisá tu email para confirmar la cuenta.</p>
-          <Link to="/login" className="mt-4 inline-block text-blue-600 hover:text-blue-500">
-            Ir a iniciar sesión
-          </Link>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -47,6 +35,26 @@ export function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Nombre completo</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">DNI</label>
+            <input
+              type="text"
+              value={dni}
+              onChange={(e) => setDni(e.target.value)}
+              required
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
