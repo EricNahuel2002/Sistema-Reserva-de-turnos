@@ -17,9 +17,6 @@ export function Navbar() {
         {user && (
           <>
             <div className="hidden items-center gap-4 md:flex">
-              <Link to="/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600">
-                Dashboard
-              </Link>
               <span className="text-sm text-gray-500">{profile?.full_name}</span>
               <button
                 onClick={signOut}
