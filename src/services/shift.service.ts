@@ -4,7 +4,7 @@ import type { Shift, ShiftWithDetails } from '../types'
 export async function getAllShifts(): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')
-    .select('*, client:profile!client_id(id, full_name, dni), specialty:specialty_id(name)')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name)')
     .order('created_at', { ascending: false })
 
   if (error) throw error
