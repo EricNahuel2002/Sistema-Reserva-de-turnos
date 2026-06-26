@@ -17,6 +17,11 @@ export function Navbar() {
         {user && (
           <>
             <div className="hidden items-center gap-4 md:flex">
+              {profile?.role.name === 'admin' && (
+                <Link to="/admin/dashboard" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+                  Panel Admin
+                </Link>
+              )}
               <span className="text-sm text-gray-500">{profile?.full_name}</span>
               <button
                 onClick={signOut}
@@ -46,6 +51,15 @@ export function Navbar() {
       </div>
       {menuOpen && user && (
         <div className="border-t border-gray-200 px-4 py-3 md:hidden">
+          {profile?.role.name === 'admin' && (
+            <Link
+              to="/admin/dashboard"
+              className="block py-2 text-sm font-medium text-gray-700"
+              onClick={() => setMenuOpen(false)}
+            >
+              Panel Admin
+            </Link>
+          )}
           <Link
             to="/dashboard"
             className="block py-2 text-sm font-medium text-gray-700"

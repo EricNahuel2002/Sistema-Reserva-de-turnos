@@ -1,5 +1,15 @@
 import { supabase } from '../lib/supabase'
-import type { Shift } from '../types'
+import type { Shift, ShiftWithDetails } from '../types'
+
+export async function getAllShifts(): Promise<ShiftWithDetails[]> {
+  const { data, error } = await supabase
+    .from('shift')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data ?? []) as ShiftWithDetails[]
+}
 
 export async function createShift(specialtyId: string): Promise<Shift> {
   const { data: userData } = await supabase.auth.getUser()
