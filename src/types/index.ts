@@ -12,3 +12,16 @@ export type Profile = {
   created_at: string
   updated_at: string
 }
+
+export type Specialty = {
+  id: string
+  name: string
+  description: string | null
+  active: boolean
+  created_at: string
+  available_from: number | null
+  available_until: number | null
+  available_day: string | null
+  image: string | null
+  value: number | null
+}
