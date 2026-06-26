@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift } from '../../services/shift.service'
-import type { Shift } from '../../types'
+import { createShift, getAllShifts } from '../../services/shift.service'
+import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {
@@ -36,14 +36,67 @@ const mockShift = (overrides?: Partial<Shift>): Shift => ({
   ...overrides,
 })
 
+const mockShiftWithDetails = (overrides?: Partial<ShiftWithDetails>): ShiftWithDetails => ({
+  id: 'shift-1',
+  client_id: 'user-1',
+  specialty_id: 'spec-1',
+  admin_id: null,
+  status: 'pending',
+  assigned_date: null,
+  assigned_time: null,
+  admin_notes: null,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  client: { id: 'user-1', full_name: 'Juan Pérez', dni: '12345678' },
+  specialty: { name: 'Cardiología' },
+  ...overrides,
+})
+
 function mockInsertChain(data: unknown) {
   const single = vi.fn().mockResolvedValue({ data, error: null })
   const select = vi.fn(() => ({ single }))
   return { insert: vi.fn(() => ({ select })), select, single }
 }
 
+function mockSelectOrderChain(data: unknown) {
+  const order = vi.fn().mockResolvedValue({ data, error: null })
+  const select = vi.fn(() => ({ order }))
+  return { select, order }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+describe('getAllShifts', () => {
+  it('returns all shifts with client and specialty details', async () => {
+    const shifts = [
+      mockShiftWithDetails(),
+      mockShiftWithDetails({ id: 'shift-2', client: { id: 'user-2', full_name: 'María García', dni: '87654321' }, specialty: { name: 'Dermatología' } }),
+    ]
+    vi.mocked(supabase.from).mockReturnValue(mockSelectOrderChain(shifts) as unknown as MockSupabaseFrom)
+
+    const result = await getAllShifts()
+
+    expect(result).toEqual(shifts)
+    expect(supabase.from).toHaveBeenCalledWith('shift')
+  })
+
+  it('returns empty array when no shifts', async () => {
+    vi.mocked(supabase.from).mockReturnValue(mockSelectOrderChain([]) as unknown as MockSupabaseFrom)
+
+    const result = await getAllShifts()
+
+    expect(result).toEqual([])
+  })
+
+  it('throws when supabase query fails', async () => {
+    const order = vi.fn().mockResolvedValue({ data: null, error: new Error('Database error') })
+    const select = vi.fn(() => ({ order }))
+    vi.mocked(supabase.from).mockReturnValue({ select } as unknown as MockSupabaseFrom)
+
+    await expect(getAllShifts()).rejects.toThrow('Database error')
+  })
 })
 
 describe('createShift', () => {

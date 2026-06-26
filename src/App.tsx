@@ -4,19 +4,40 @@ import { Navbar } from './components/Navbar'
 import { Login } from './views/Login'
 import { Register } from './views/Register'
 import { Dashboard } from './views/Dashboard'
+import { AdminDashboard } from './views/AdminDashboard'
 import { NotFound } from './views/NotFound'
 import { LoadingSpinner } from './components/ui/LoadingSpinner'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
-  return user ? <>{children}</> : <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
+  return <>{children}</>
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
-  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>
+  if (user && profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
+  if (user) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <LoadingSpinner />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile?.role.name !== 'admin') return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
+
+function HomeRedirect() {
+  const { user, profile, loading } = useAuth()
+  if (loading) return <LoadingSpinner />
+  if (!user) return <Navigate to="/login" replace />
+  if (profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
@@ -28,7 +49,8 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/" element={<HomeRedirect />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
