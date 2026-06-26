@@ -24,17 +24,17 @@ export function SpecialtyModal({
   submitError,
   successMessage,
 }: Props) {
-  if (!specialty) return null
-
-  const from = formatHour(specialty.available_from)
-  const until = formatHour(specialty.available_until)
-
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(onClose, 2000)
       return () => clearTimeout(timer)
     }
   }, [successMessage, onClose])
+
+  if (!specialty) return null
+
+  const from = formatHour(specialty.available_from)
+  const until = formatHour(specialty.available_until)
 
   return (
     <div

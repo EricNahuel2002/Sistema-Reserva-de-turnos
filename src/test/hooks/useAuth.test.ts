@@ -22,6 +22,9 @@ vi.mock('../../services/profile.service', () => ({
 
 import { getProfile } from '../../services/profile.service'
 
+type MockProfileResult = Awaited<ReturnType<typeof getProfile>>
+type AuthCallback = Parameters<NonNullable<typeof supabase.auth.onAuthStateChange>>[0]
+
 const mockUser = {
   id: 'user-1',
   email: 'test@test.com',
@@ -39,7 +42,16 @@ const mockSession = {
   token_type: 'bearer' as const,
 }
 
-const mockProfile = { id: 'user-1', full_name: 'Test', dni: '12345678', role: { name: 'client' } }
+const mockProfile = {
+  id: 'user-1',
+  role_id: 'role-1',
+  full_name: 'Test',
+  dni: '12345678',
+  phone: null,
+  role: { name: 'client' as const },
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+}
 
 const mockSubscription = {
   id: 'sub-1',
@@ -73,7 +85,7 @@ describe('useAuth', () => {
     vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
       data: { subscription: mockSubscription },
     })
-    vi.mocked(getProfile).mockResolvedValue(mockProfile as any)
+    vi.mocked(getProfile).mockResolvedValue(mockProfile as unknown as MockProfileResult)
 
     const { result } = renderHook(() => useAuth())
 
@@ -102,12 +114,12 @@ describe('useAuth', () => {
 
   it('updates user and profile on auth state change (login)', async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null })
-    let authCallback: (event: string, session: any) => void = () => {}
-    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((callback: any) => {
+    let authCallback: AuthCallback = null!
+    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((callback) => {
       authCallback = callback
       return { data: { subscription: mockSubscription } }
     })
-    vi.mocked(getProfile).mockResolvedValue(mockProfile as any)
+    vi.mocked(getProfile).mockResolvedValue(mockProfile as unknown as MockProfileResult)
 
     const { result } = renderHook(() => useAuth())
 
@@ -124,12 +136,12 @@ describe('useAuth', () => {
 
   it('clears user and profile on auth state change (logout)', async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: mockSession }, error: null })
-    let authCallback: (event: string, session: any) => void = () => {}
-    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((callback: any) => {
+    let authCallback: AuthCallback = null!
+    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((callback) => {
       authCallback = callback
       return { data: { subscription: mockSubscription } }
     })
-    vi.mocked(getProfile).mockResolvedValue(mockProfile as any)
+    vi.mocked(getProfile).mockResolvedValue(mockProfile as unknown as MockProfileResult)
 
     const { result } = renderHook(() => useAuth())
 

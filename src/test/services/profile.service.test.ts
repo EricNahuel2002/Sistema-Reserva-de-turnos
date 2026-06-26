@@ -9,6 +9,8 @@ vi.mock('../../lib/supabase', () => ({
   },
 }))
 
+type MockSupabaseFrom = ReturnType<typeof supabase.from>
+
 const mockProfile = (overrides?: Partial<Profile>): Profile => ({
   id: 'user-1',
   role_id: 'role-1',
@@ -44,7 +46,7 @@ describe('getProfile', () => {
     const profile = mockProfile()
     const single = vi.fn().mockResolvedValue({ data: profile, error: null })
     const eq = vi.fn(() => ({ single }))
-    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as any)
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     const result = await getProfile('user-1')
 
@@ -55,7 +57,7 @@ describe('getProfile', () => {
   it('returns null when not found', async () => {
     const single = vi.fn().mockResolvedValue({ data: null, error: null })
     const eq = vi.fn(() => ({ single }))
-    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as any)
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     const result = await getProfile('user-1')
 
@@ -68,7 +70,7 @@ describe('getSpecialties', () => {
     const specialties = [mockSpecialty(), mockSpecialty({ id: 'spec-2', name: 'Dermatología' })]
     const order = vi.fn().mockResolvedValue({ data: specialties, error: null })
     const eq = vi.fn(() => ({ order }))
-    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as any)
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     const result = await getSpecialties()
 
@@ -79,7 +81,7 @@ describe('getSpecialties', () => {
   it('returns empty array when no specialties', async () => {
     const order = vi.fn().mockResolvedValue({ data: [], error: null })
     const eq = vi.fn(() => ({ order }))
-    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as any)
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     const result = await getSpecialties()
 

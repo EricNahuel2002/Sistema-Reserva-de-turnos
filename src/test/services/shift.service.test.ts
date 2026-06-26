@@ -10,6 +10,9 @@ vi.mock('../../lib/supabase', () => ({
   },
 }))
 
+type MockSupabaseFrom = ReturnType<typeof supabase.from>
+type MockUserResponse = Awaited<ReturnType<typeof supabase.auth.getUser>>
+
 const mockUser = {
   id: 'user-1',
   email: 'test@test.com',
@@ -47,7 +50,7 @@ describe('createShift', () => {
   it('creates a shift with pending status', async () => {
     const shift = mockShift()
     vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
-    vi.mocked(supabase.from).mockReturnValue(mockInsertChain(shift) as any)
+    vi.mocked(supabase.from).mockReturnValue(mockInsertChain(shift) as unknown as MockSupabaseFrom)
 
     const result = await createShift('spec-1')
 
@@ -56,7 +59,7 @@ describe('createShift', () => {
   })
 
   it('throws when user is not authenticated', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as any)
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as unknown as MockUserResponse)
 
     await expect(createShift('spec-1')).rejects.toThrow('Usuario no autenticado')
   })
@@ -65,7 +68,7 @@ describe('createShift', () => {
     vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
     const single = vi.fn().mockResolvedValue({ data: null, error: new Error('Database error') })
     const select = vi.fn(() => ({ single }))
-    vi.mocked(supabase.from).mockReturnValue({ insert: vi.fn(() => ({ select })) } as any)
+    vi.mocked(supabase.from).mockReturnValue({ insert: vi.fn(() => ({ select })) } as unknown as MockSupabaseFrom)
 
     await expect(createShift('spec-1')).rejects.toThrow('Database error')
   })
