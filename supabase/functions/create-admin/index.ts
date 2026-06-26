@@ -85,7 +85,8 @@ serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err: unknown) {
-    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
+    const message = err instanceof Error ? err.message : 'Error interno del servidor'
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
