@@ -76,6 +76,11 @@ export function Login() {
             Registrate
           </Link>
         </p>
+        <p className="text-center text-xs text-gray-400">
+          <Link to="/admin/register" className="hover:text-gray-500">
+            ¿Administrador? Registrarse con código
+          </Link>
+        </p>
       </div>
     </div>
   )
