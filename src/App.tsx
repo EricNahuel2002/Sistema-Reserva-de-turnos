@@ -13,13 +13,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
+  if (!profile) return <Navigate to="/login" replace />
+  if (profile.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
   return <>{children}</>
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
+  if (user && !profile) return <Navigate to="/login" replace />
   if (user && profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
   if (user) return <Navigate to="/dashboard" replace />
   return <>{children}</>
@@ -29,7 +31,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role.name !== 'admin') return <Navigate to="/dashboard" replace />
+  if (!profile) return <Navigate to="/login" replace />
+  if (profile.role.name !== 'admin') return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 
@@ -37,7 +40,8 @@ function HomeRedirect() {
   const { user, profile, loading } = useAuth()
   if (loading) return <LoadingSpinner />
   if (!user) return <Navigate to="/login" replace />
-  if (profile?.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
+  if (!profile) return <Navigate to="/login" replace />
+  if (profile.role.name === 'admin') return <Navigate to="/admin/dashboard" replace />
   return <Navigate to="/dashboard" replace />
 }
 
