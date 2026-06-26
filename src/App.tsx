@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import { Navbar } from './components/Navbar'
 import { Login } from './views/Login'
 import { Register } from './views/Register'
+import { AdminRegister } from './views/AdminRegister'
 import { Dashboard } from './views/Dashboard'
 import { AdminDashboard } from './views/AdminDashboard'
 import { NotFound } from './views/NotFound'
@@ -48,6 +49,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/admin/register" element={<AdminRegister />} />
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/" element={<HomeRedirect />} />
