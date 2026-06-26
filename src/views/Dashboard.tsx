@@ -1,29 +1,63 @@
-import { useAuth } from '../hooks/useAuth'
+import { useEffect, useState } from 'react'
+import { getSpecialties } from '../services/profile.service'
+import { SpecialtyModal } from '../components/SpecialtyModal'
+import type { Specialty } from '../types'
+
+function formatHour(h: number | null): string | null {
+  if (h === null || h === undefined) return null
+  return `${String(h).padStart(2, '0')}:00`
+}
 
 export function Dashboard() {
-  const { profile, signOut } = useAuth()
+  const [specialties, setSpecialties] = useState<Specialty[]>([])
+  const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null)
+
+  useEffect(() => {
+    getSpecialties().then(setSpecialties)
+  }, [])
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-1 text-gray-600">Bienvenido, {profile?.full_name}</p>
-          </div>
+
+
+      <h2 className="mt-8 mb-4 text-xl font-semibold text-gray-900">Especialidades</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {specialties.map((s) => (
           <button
-            onClick={signOut}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+            key={s.id}
+            onClick={() => setSelectedSpecialty(s)}
+            className="overflow-hidden rounded-xl bg-white text-left shadow-sm transition hover:shadow-md"
           >
-            Cerrar sesión
+            {s.image && (
+              <img
+                src={s.image}
+                alt={s.name}
+                className="h-40 w-full object-cover"
+              />
+            )}
+            <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900">{s.name}</h3>
+            <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+              {s.description ?? 'Sin descripción'}
+            </p>
+            {(s.available_day || s.available_from || s.available_until) && (
+              <p className="mt-2 text-xs text-gray-400">
+                {s.available_day && <>{s.available_day} · </>}
+                {formatHour(s.available_from)} - {formatHour(s.available_until)}
+              </p>
+            )}
+            {s.value != null && (
+              <p className="mt-1 text-sm font-semibold text-green-600">${s.value.toLocaleString('es-AR')}</p>
+            )}
+            </div>
           </button>
-        </div>
-        <div className="mt-6 rounded-lg bg-blue-50 p-4">
-          <p className="text-sm text-blue-800">
-            Rol: {profile?.role?.name}
-          </p>
-        </div>
+        ))}
       </div>
+
+      <SpecialtyModal
+        specialty={selectedSpecialty}
+        onClose={() => setSelectedSpecialty(null)}
+      />
     </div>
   )
 }
