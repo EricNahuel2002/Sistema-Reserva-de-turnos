@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import { SubmitButton } from '../components/ui/SubmitButton'
 
 export function AdminRegister() {
@@ -18,16 +17,28 @@ export function AdminRegister() {
     setError('')
     setLoading(true)
 
-    const { error } = await supabase.functions.invoke('create-admin', {
-      body: { email, password, full_name: fullName, dni, admin_code: adminCode },
-    })
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, full_name: fullName, dni, admin_code: adminCode }),
+        },
+      )
 
-    if (error) {
-      setError(error.message)
-    } else {
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Error al crear administrador')
+      }
+
       navigate('/login')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error inesperado')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

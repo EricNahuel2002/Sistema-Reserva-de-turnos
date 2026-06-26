@@ -11,31 +11,45 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = async (userId: string) => {
-    const p = await getProfile(userId)
-    setProfile(p)
+    try {
+      const p = await getProfile(userId)
+      if (p) setProfile(p)
+    } catch (err) {
+      console.error('Failed to fetch profile:', err)
+    }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let ignore = false
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (ignore) return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchProfile(session.user.id)
+        await fetchProfile(session.user.id)
       }
-      setLoading(false)
+      if (!ignore) setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (ignore) return
+      if (event === 'INITIAL_SESSION') return
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchProfile(session.user.id)
+        if (event === 'SIGNED_IN') setLoading(true)
+        await fetchProfile(session.user.id)
       } else {
         setProfile(null)
       }
+      if (!ignore) setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      ignore = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email: string, password: string, fullName?: string, dni?: string) => {
