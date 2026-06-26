@@ -25,3 +25,18 @@ export type Specialty = {
   image: string | null
   value: number | null
 }
+
+export type ShiftStatus = 'pending' | 'approved' | 'cancelled'
+
+export type Shift = {
+  id: string
+  client_id: string
+  specialty_id: string
+  admin_id: string | null
+  status: ShiftStatus
+  assigned_date: string | null
+  assigned_time: string | null
+  admin_notes: string | null
+  created_at: string
+  updated_at: string
+}

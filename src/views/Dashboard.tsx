@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getSpecialties } from '../services/profile.service'
+import { createShift } from '../services/shift.service'
 import { SpecialtyModal } from '../components/SpecialtyModal'
 import type { Specialty } from '../types'
 
@@ -11,10 +12,32 @@ function formatHour(h: number | null): string | null {
 export function Dashboard() {
   const [specialties, setSpecialties] = useState<Specialty[]>([])
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   useEffect(() => {
     getSpecialties().then(setSpecialties)
   }, [])
+
+  async function handleRequestAppointment(specialtyId: string) {
+    setSubmitting(true)
+    setError(null)
+    try {
+      await createShift(specialtyId)
+      setSuccessMessage('Turno solicitado con éxito')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al solicitar el turno')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function handleCloseModal() {
+    setSelectedSpecialty(null)
+    setError(null)
+    setSuccessMessage(null)
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -26,7 +49,7 @@ export function Dashboard() {
           <button
             key={s.id}
             onClick={() => setSelectedSpecialty(s)}
-            className="overflow-hidden rounded-xl bg-white text-left shadow-sm transition hover:shadow-md"
+            className="overflow-hidden rounded-xl bg-white text-left shadow-sm transition hover:shadow-md hover:ring-2 hover:ring-green-300 cursor-pointer"
           >
             {s.image && (
               <img
@@ -56,7 +79,11 @@ export function Dashboard() {
 
       <SpecialtyModal
         specialty={selectedSpecialty}
-        onClose={() => setSelectedSpecialty(null)}
+        onClose={handleCloseModal}
+        onRequestAppointment={() => selectedSpecialty && handleRequestAppointment(selectedSpecialty.id)}
+        isSubmitting={submitting}
+        submitError={error}
+        successMessage={successMessage}
       />
     </div>
   )
