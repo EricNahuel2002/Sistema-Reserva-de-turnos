@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getTodayShiftsCount } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -253,6 +253,35 @@ describe('getPendingShiftsCount', () => {
     vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     await expect(getPendingShiftsCount()).rejects.toThrow('Database error')
+  })
+})
+
+describe('getApprovedShiftsCount', () => {
+  it('returns the count of approved shifts', async () => {
+    const count = 7
+    const eq = vi.fn().mockResolvedValue({ count, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getApprovedShiftsCount()
+
+    expect(result).toBe(7)
+    expect(supabase.from).toHaveBeenCalledWith('shift')
+  })
+
+  it('returns 0 when no approved shifts', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getApprovedShiftsCount()
+
+    expect(result).toBe(0)
+  })
+
+  it('throws when supabase query fails', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    await expect(getApprovedShiftsCount()).rejects.toThrow('Database error')
   })
 })
 

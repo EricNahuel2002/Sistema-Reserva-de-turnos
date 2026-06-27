@@ -75,6 +75,16 @@ export async function getPendingShiftsCount(): Promise<number> {
   return count ?? 0
 }
 
+export async function getApprovedShiftsCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('shift')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'approved')
+
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function getTodayShiftsCount(): Promise<number> {
   const today = new Date().toISOString().split('T')[0]
   const { count, error } = await supabase

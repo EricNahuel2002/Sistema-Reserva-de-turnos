@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount } from '../services/shift.service'
+import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
@@ -14,6 +14,7 @@ import {
   X as XIcon,
   Clock,
   CalendarDays,
+  CheckCircle,
   Pencil,
   Trash2,
   ChevronRight,
@@ -129,6 +130,8 @@ function DashboardOverview() {
   const [pendingLoading, setPendingLoading] = useState(true)
   const [todayCount, setTodayCount] = useState<number | null>(null)
   const [todayLoading, setTodayLoading] = useState(true)
+  const [approvedCount, setApprovedCount] = useState<number | null>(null)
+  const [approvedLoading, setApprovedLoading] = useState(true)
 
   useEffect(() => {
     getPendingShiftsCount()
@@ -140,6 +143,11 @@ function DashboardOverview() {
       .then(setTodayCount)
       .catch(() => setTodayCount(0))
       .finally(() => setTodayLoading(false))
+
+    getApprovedShiftsCount()
+      .then(setApprovedCount)
+      .catch(() => setApprovedCount(0))
+      .finally(() => setApprovedLoading(false))
   }, [])
 
   return (
@@ -178,11 +186,13 @@ function DashboardOverview() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Clientes Registrados</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+              <p className="text-sm text-gray-500">Turnos Aprobados</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {approvedLoading ? '—' : approvedCount}
+              </p>
             </div>
             <div className="rounded-lg bg-green-50 p-3">
-              <Users className="h-6 w-6 text-green-600" />
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
