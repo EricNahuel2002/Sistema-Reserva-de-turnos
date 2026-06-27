@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { ShiftWithDetails } from '../types'
 import { assignShift, getShiftsByDateRange } from '../services/shift.service'
-import { X, ChevronLeft, ChevronRight, Clock, CalendarDays, AlertCircle } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -295,7 +295,9 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
                                 ? 'cursor-not-allowed text-gray-300'
                                 : isSelected
                                   ? 'bg-blue-50 text-blue-700 font-semibold'
-                                  : 'hover:bg-gray-50 text-gray-700'
+                                  : isToday
+                                    ? 'ring-1 ring-blue-300 text-gray-700 hover:bg-gray-50'
+                                    : 'hover:bg-gray-50 text-gray-700'
                           } ${day ? 'cursor-pointer' : ''}`}
                         >
                           {day && (
