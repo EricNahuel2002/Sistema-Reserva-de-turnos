@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:edge": "deno test supabase/functions/ --allow-env --allow-net --config supabase/functions/deno.json"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
