@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
+import { getSpecialtiesCount } from '../services/profile.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
@@ -132,6 +133,8 @@ function DashboardOverview() {
   const [todayLoading, setTodayLoading] = useState(true)
   const [approvedCount, setApprovedCount] = useState<number | null>(null)
   const [approvedLoading, setApprovedLoading] = useState(true)
+  const [specialtiesCount, setSpecialtiesCount] = useState<number | null>(null)
+  const [specialtiesLoading, setSpecialtiesLoading] = useState(true)
 
   useEffect(() => {
     getPendingShiftsCount()
@@ -148,6 +151,11 @@ function DashboardOverview() {
       .then(setApprovedCount)
       .catch(() => setApprovedCount(0))
       .finally(() => setApprovedLoading(false))
+
+    getSpecialtiesCount()
+      .then(setSpecialtiesCount)
+      .catch(() => setSpecialtiesCount(0))
+      .finally(() => setSpecialtiesLoading(false))
   }, [])
 
   return (
@@ -201,7 +209,9 @@ function DashboardOverview() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Especialidades</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {specialtiesLoading ? '—' : specialtiesCount}
+              </p>
             </div>
             <div className="rounded-lg bg-purple-50 p-3">
               <Wrench className="h-6 w-6 text-purple-600" />
