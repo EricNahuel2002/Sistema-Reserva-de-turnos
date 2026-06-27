@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Calendar,
   Wrench,
-  Users,
   X,
   Search,
   Menu,
