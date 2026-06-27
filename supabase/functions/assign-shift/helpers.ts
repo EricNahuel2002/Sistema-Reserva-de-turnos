@@ -1,35 +1,3 @@
-export interface SupabaseClientLike {
-  auth: {
-    getUser(token: string): Promise<{
-      data: { user: { id: string } | null }
-      error: { message: string } | null
-    }>
-  }
-  from(table: string): FromQuery
-}
-
-interface FromQuery {
-  select(columns: string, opts?: { count?: string; head?: boolean }): SelectQuery
-  update(data: Record<string, unknown>): UpdateQuery
-}
-
-interface SelectQuery {
-  eq(col: string, val: unknown): SingleQuery
-}
-
-interface SingleQuery {
-  single(): Promise<{ data: Record<string, unknown> | null; error: unknown }>
-  eq(col: string, val: unknown): CountQuery
-}
-
-interface CountQuery extends Promise<{ data: Record<string, unknown> | null; count: number | null; error: unknown }> {
-  neq(col: string, val: unknown): CountQuery
-}
-
-interface UpdateQuery {
-  eq(col: string, val: unknown): Promise<{ error: { message: string } | null }>
-}
-
 export const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',

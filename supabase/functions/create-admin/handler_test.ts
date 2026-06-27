@@ -1,6 +1,6 @@
 import { assertEquals } from 'std/testing/asserts.ts'
 import { handleCreateAdmin } from './handler.ts'
-import type { SupabaseClientLike } from './helpers.ts'
+import type { SupabaseClientLike } from './types.ts'
 
 Deno.test('handleCreateAdmin - CORS preflight', async () => {
   const req = new Request('http://localhost', { method: 'OPTIONS' })

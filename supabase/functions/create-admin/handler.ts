@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClientLike } from './types.ts'
 import {
   corsHeaders,
   validateRequiredFields,
   isValidAdminCode,
-  SupabaseClientLike,
 } from './helpers.ts'
 
 export async function handleCreateAdmin(

@@ -1,6 +1,6 @@
 import { assertEquals } from 'std/testing/asserts.ts'
 import { handleAssignShift } from './handler.ts'
-import type { SupabaseClientLike } from './helpers.ts'
+import type { SupabaseClientLike } from './types.ts'
 
 function mockSupabase(
   overrides: {

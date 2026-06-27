@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClientLike } from './types.ts'
 import {
   corsHeaders,
   parseTimeToDecimal,
@@ -7,7 +8,6 @@ import {
   isCorrectDayOfWeek,
   validateRequiredFields,
   formatRangeTime,
-  SupabaseClientLike,
 } from './helpers.ts'
 
 export async function handleAssignShift(
