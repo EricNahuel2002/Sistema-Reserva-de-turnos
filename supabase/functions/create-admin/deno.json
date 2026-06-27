@@ -4,6 +4,7 @@
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10"
   },
   "tasks": {
-    "serve": "supabase functions serve create-admin --env-file .env"
+    "serve": "supabase functions serve create-admin --env-file .env",
+    "test": "deno test --allow-env --allow-net"
   }
 }
