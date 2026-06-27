@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAllShifts } from '../services/shift.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
+import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
 import {
   LayoutDashboard,
@@ -162,12 +163,19 @@ function DashboardOverview() {
   )
 }
 
+function formatISODate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-')
+  return `${d}/${m}/${y}`
+}
+
 function ShiftsManagement() {
   const [shifts, setShifts] = useState<ShiftWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ShiftStatus | 'all'>('all')
+  const [selectedShift, setSelectedShift] = useState<ShiftWithDetails | null>(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
 
   const loadShifts = () => {
     setLoading(true)
@@ -254,6 +262,7 @@ function ShiftsManagement() {
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Fecha</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Estado</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Creado</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -271,7 +280,7 @@ function ShiftsManagement() {
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600">
                       {shift.assigned_date ? (
                         <span>
-                          {new Date(shift.assigned_date).toLocaleDateString('es-AR')}
+                          {formatISODate(shift.assigned_date!)}
                           {shift.assigned_time ? ` ${shift.assigned_time.slice(0, 5)}` : ''}
                         </span>
                       ) : (
@@ -286,6 +295,17 @@ function ShiftsManagement() {
                     <td className="whitespace-nowrap px-4 py-3 text-gray-500">
                       {new Date(shift.created_at).toLocaleDateString('es-AR')}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <button
+                        onClick={() => {
+                          setSelectedShift(shift)
+                          setShowAssignModal(true)
+                        }}
+                        className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                      >
+                        Gestionar
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -293,6 +313,16 @@ function ShiftsManagement() {
           </div>
         </div>
       )}
+
+      <AssignShiftModal
+        shift={selectedShift}
+        open={showAssignModal}
+        onClose={() => {
+          setShowAssignModal(false)
+          setSelectedShift(null)
+        }}
+        onAssigned={loadShifts}
+      />
     </div>
   )
 }
