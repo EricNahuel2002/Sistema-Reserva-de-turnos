@@ -4,7 +4,7 @@ import type { Shift, ShiftWithDetails } from '../types'
 export async function getAllShifts(): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')
-    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until)')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until, available_day)')
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -50,7 +50,7 @@ export async function assignShift(
 export async function getShiftsByDateRange(from: string, to: string): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')
-    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until)')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until, available_day)')
     .gte('assigned_date', from)
     .lte('assigned_date', to)
     .neq('status', 'cancelled')

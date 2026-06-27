@@ -6,6 +6,16 @@ import { X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
+const DAY_OF_WEEK_MAP: Record<string, number> = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miércoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sábado: 6,
+}
+
 const statusLabels: Record<string, string> = {
   pending: 'Pendiente',
   approved: 'Aprobado',
@@ -41,6 +51,11 @@ function generateTimeSlots(from: number, until: number): string[] {
     slots.push(`${String(h).padStart(2, '0')}:30`)
   }
   return slots
+}
+
+function formatISODate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-')
+  return `${d}/${m}/${y}`
 }
 
 type Props = {
@@ -98,7 +113,8 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
     }
   }, [monthShifts, shift])
 
-  const { available_from: availableFrom, available_until: availableUntil } = shift?.specialty ?? {}
+  const { available_from: availableFrom, available_until: availableUntil, available_day: availableDay } = shift?.specialty ?? {}
+  const allowedDayOfWeek = availableDay ? DAY_OF_WEEK_MAP[availableDay.toLowerCase()] : undefined
 
   const timeSlots = useMemo(() => {
     if (!selectedDate || availableFrom == null || availableUntil == null) return []
@@ -215,9 +231,9 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
               {shift.assigned_date && (
                 <div className="col-span-2">
                   <span className="text-gray-500">Horario asignado actualmente</span>
-                  <p className="font-medium text-gray-900">
-                    {new Date(shift.assigned_date + 'T00:00:00').toLocaleDateString('es-AR')}
-                    {shift.assigned_time ? ` ${shift.assigned_time.slice(0, 5)}` : ''}
+                      <p className="font-medium text-gray-900">
+                        {formatISODate(shift.assigned_date)}
+                        {shift.assigned_time ? ` ${shift.assigned_time.slice(0, 5)}` : ''}
                   </p>
                 </div>
               )}
@@ -282,16 +298,19 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
                       const isSelected = dateStr === selectedDate
                       const isPast = dateStr != null && dateStr < today
                       const hasShifts = dateStr != null && assignedDates.has(dateStr)
+                      const dayOfWeek = day ? new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day).getDay() : -1
+                      const isAllowedDay = allowedDayOfWeek == null || dayOfWeek === allowedDayOfWeek
+                      const isDisabled = isPast || !isAllowedDay
 
                       return (
                         <button
                           key={i}
-                          disabled={!day || isPast}
+                          disabled={!day || isDisabled}
                           onClick={() => day && handleDayClick(day)}
                           className={`relative flex flex-col items-center py-2 text-sm transition-colors ${
                             !day
                               ? 'cursor-default'
-                              : isPast
+                              : isDisabled
                                 ? 'cursor-not-allowed text-gray-300'
                                 : isSelected
                                   ? 'bg-blue-50 text-blue-700 font-semibold'
@@ -324,7 +343,7 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-gray-700">
                     Horarios disponibles para el{' '}
-                    {new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-AR')}
+                    {formatISODate(selectedDate)}
                   </h3>
                   <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                     {timeSlots.map((time) => {

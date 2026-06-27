@@ -6,6 +6,16 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const DAY_OF_WEEK_MAP: Record<string, number> = {
+  domingo: 0,
+  lunes: 1,
+  martes: 2,
+  miércoles: 3,
+  jueves: 4,
+  viernes: 5,
+  sábado: 6,
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -71,7 +81,7 @@ serve(async (req: Request) => {
 
     const { data: shift, error: shiftError } = await supabase
       .from('shift')
-      .select('id, status')
+      .select('id, status, specialty:specialty_id(available_from, available_until, available_day)')
       .eq('id', shift_id)
       .single()
 
@@ -87,6 +97,54 @@ serve(async (req: Request) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    const specialty = shift.specialty as unknown as { available_from: number | null; available_until: number | null } | null
+    const availableFrom = specialty?.available_from
+    const availableUntil = specialty?.available_until
+
+    if (availableFrom == null || availableUntil == null) {
+      return new Response(JSON.stringify({ error: 'La especialidad no tiene rango horario configurado' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const hour = parseInt(assigned_time.split(':')[0], 10)
+    const minute = parseInt(assigned_time.split(':')[1], 10)
+    const timeDecimal = hour + minute / 60
+
+    if (timeDecimal < availableFrom || timeDecimal >= availableUntil) {
+      const fmtFrom = String(availableFrom).padStart(2, '0') + ':00'
+      const fmtUntil = String(availableUntil).padStart(2, '0') + ':00'
+      return new Response(JSON.stringify({
+        error: `El horario debe estar entre ${fmtFrom} y ${fmtUntil}`,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const availableDay = (specialty as unknown as { available_day: string | null })?.available_day
+    if (availableDay) {
+      const allowedDayOfWeek = DAY_OF_WEEK_MAP[availableDay.toLowerCase()]
+      if (allowedDayOfWeek == null) {
+        return new Response(JSON.stringify({ error: `Día de semana inválido: ${availableDay}` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const [y, m, d] = assigned_date.split('-')
+      const dateObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+      if (dateObj.getDay() !== allowedDayOfWeek) {
+        return new Response(JSON.stringify({
+          error: `La especialidad solo atiende los días ${availableDay}`,
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     const { count } = await supabase

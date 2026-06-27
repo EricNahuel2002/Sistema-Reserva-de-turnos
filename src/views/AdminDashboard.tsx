@@ -163,6 +163,11 @@ function DashboardOverview() {
   )
 }
 
+function formatISODate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-')
+  return `${d}/${m}/${y}`
+}
+
 function ShiftsManagement() {
   const [shifts, setShifts] = useState<ShiftWithDetails[]>([])
   const [loading, setLoading] = useState(true)
@@ -275,7 +280,7 @@ function ShiftsManagement() {
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600">
                       {shift.assigned_date ? (
                         <span>
-                          {new Date(shift.assigned_date).toLocaleDateString('es-AR')}
+                          {formatISODate(shift.assigned_date!)}
                           {shift.assigned_time ? ` ${shift.assigned_time.slice(0, 5)}` : ''}
                         </span>
                       ) : (
