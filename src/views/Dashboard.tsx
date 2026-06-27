@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getSpecialties } from '../services/profile.service'
 import { createShift } from '../services/shift.service'
 import { SpecialtyModal } from '../components/SpecialtyModal'
+import { ClientAgenda } from '../components/ClientAgenda'
 import type { Specialty } from '../types'
 
 function formatHour(h: number | null): string | null {
@@ -41,7 +42,7 @@ export function Dashboard() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-
+      <ClientAgenda />
 
       <h2 className="mt-8 mb-4 text-xl font-semibold text-gray-900">Especialidades</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

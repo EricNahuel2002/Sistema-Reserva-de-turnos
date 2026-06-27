@@ -47,6 +47,24 @@ export async function assignShift(
   return data as { success: boolean }
 }
 
+export async function getClientShifts(): Promise<ShiftWithDetails[]> {
+  const { data: userData } = await supabase.auth.getUser()
+  const clientId = userData.user?.id
+  if (!clientId) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('shift')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until, available_day)')
+    .eq('client_id', clientId)
+    .neq('status', 'cancelled')
+    .not('assigned_date', 'is', null)
+    .order('assigned_date', { ascending: true })
+    .order('assigned_time', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as ShiftWithDetails[]
+}
+
 export async function getShiftsByDateRange(from: string, to: string): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')
