@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -224,5 +224,73 @@ describe('getShiftsByDateRange', () => {
     )
 
     await expect(getShiftsByDateRange('2026-07-01', '2026-07-31')).rejects.toThrow('Database error')
+  })
+})
+
+describe('getClientShifts', () => {
+  function createMockChain(opts: { data?: unknown; error?: Error | null }) {
+    const error = opts.error ?? null
+    const data = error ? null : (opts.data ?? null)
+    const resolveValue = { data, error }
+
+    const chain: Record<string, unknown> = {
+      then: (resolve: (v: unknown) => void) => resolve(resolveValue),
+    }
+    chain.select = vi.fn(() => chain)
+    chain.eq = vi.fn(() => chain)
+    chain.neq = vi.fn(() => chain)
+    chain.not = vi.fn(() => chain)
+    chain.order = vi.fn(() => chain)
+    return chain
+  }
+
+  it('returns client shifts with details', async () => {
+    const shifts = [
+      mockShiftWithDetails({
+        id: 'shift-1',
+        assigned_date: '2026-07-15',
+        assigned_time: '10:00',
+        status: 'approved',
+      }),
+      mockShiftWithDetails({
+        id: 'shift-2',
+        assigned_date: '2026-07-20',
+        assigned_time: '14:30',
+        status: 'approved',
+        specialty: { name: 'Dermatología', available_from: 9, available_until: 15, available_day: 'martes' },
+      }),
+    ]
+
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
+    vi.mocked(supabase.from).mockReturnValue(createMockChain({ data: shifts }) as unknown as MockSupabaseFrom)
+
+    const result = await getClientShifts()
+
+    expect(result).toEqual(shifts)
+    expect(supabase.from).toHaveBeenCalledWith('shift')
+  })
+
+  it('returns empty array when client has no shifts', async () => {
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
+    vi.mocked(supabase.from).mockReturnValue(createMockChain({ data: [] }) as unknown as MockSupabaseFrom)
+
+    const result = await getClientShifts()
+
+    expect(result).toEqual([])
+  })
+
+  it('throws when user is not authenticated', async () => {
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as unknown as MockUserResponse)
+
+    await expect(getClientShifts()).rejects.toThrow('Usuario no autenticado')
+  })
+
+  it('throws when supabase query fails', async () => {
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
+    vi.mocked(supabase.from).mockReturnValue(
+      createMockChain({ error: new Error('Database error') }) as unknown as MockSupabaseFrom,
+    )
+
+    await expect(getClientShifts()).rejects.toThrow('Database error')
   })
 })
