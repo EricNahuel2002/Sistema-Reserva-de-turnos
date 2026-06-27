@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getTodayShiftsCount } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -253,6 +253,38 @@ describe('getPendingShiftsCount', () => {
     vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
     await expect(getPendingShiftsCount()).rejects.toThrow('Database error')
+  })
+})
+
+describe('getTodayShiftsCount', () => {
+  it('returns the count of today shifts', async () => {
+    const count = 3
+    const neq = vi.fn().mockResolvedValue({ count, data: null, error: null })
+    const eq = vi.fn(() => ({ neq }))
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getTodayShiftsCount()
+
+    expect(result).toBe(3)
+    expect(supabase.from).toHaveBeenCalledWith('shift')
+  })
+
+  it('returns 0 when no shifts today', async () => {
+    const neq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
+    const eq = vi.fn(() => ({ neq }))
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getTodayShiftsCount()
+
+    expect(result).toBe(0)
+  })
+
+  it('throws when supabase query fails', async () => {
+    const neq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
+    const eq = vi.fn(() => ({ neq }))
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    await expect(getTodayShiftsCount()).rejects.toThrow('Database error')
   })
 })
 

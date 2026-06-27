@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAllShifts, getPendingShiftsCount } from '../services/shift.service'
+import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount } from '../services/shift.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
@@ -127,12 +127,19 @@ export function AdminDashboard() {
 function DashboardOverview() {
   const [pendingCount, setPendingCount] = useState<number | null>(null)
   const [pendingLoading, setPendingLoading] = useState(true)
+  const [todayCount, setTodayCount] = useState<number | null>(null)
+  const [todayLoading, setTodayLoading] = useState(true)
 
   useEffect(() => {
     getPendingShiftsCount()
       .then(setPendingCount)
       .catch(() => setPendingCount(0))
       .finally(() => setPendingLoading(false))
+
+    getTodayShiftsCount()
+      .then(setTodayCount)
+      .catch(() => setTodayCount(0))
+      .finally(() => setTodayLoading(false))
   }, [])
 
   return (
@@ -158,7 +165,9 @@ function DashboardOverview() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Turnos Hoy</p>
-              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {todayLoading ? '—' : todayCount}
+              </p>
             </div>
             <div className="rounded-lg bg-blue-50 p-3">
               <CalendarDays className="h-6 w-6 text-blue-600" />
