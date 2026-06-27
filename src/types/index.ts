@@ -30,7 +30,7 @@ export type ShiftStatus = 'pending' | 'approved' | 'cancelled'
 
 export type ShiftWithDetails = Shift & {
   client: Pick<Profile, 'id' | 'full_name' | 'dni'> | null
-  specialty: Pick<Specialty, 'name'> | null
+  specialty: Pick<Specialty, 'name' | 'available_from' | 'available_until'> | null
 }
 
 export type Shift = {

@@ -4,7 +4,7 @@ import type { Shift, ShiftWithDetails } from '../types'
 export async function getAllShifts(): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')
-    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name)')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until)')
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -28,4 +28,36 @@ export async function createShift(specialtyId: string): Promise<Shift> {
 
   if (error) throw error
   return data as Shift
+}
+
+export async function assignShift(
+  shiftId: string,
+  assignedDate: string,
+  assignedTime: string,
+): Promise<{ success: boolean }> {
+  const { data, error } = await supabase.functions.invoke('assign-shift', {
+    body: { shift_id: shiftId, assigned_date: assignedDate, assigned_time: assignedTime },
+  })
+
+  if (error) {
+    const body = (error as { context?: { body?: { error?: string } } })?.context?.body
+    throw new Error(body?.error ?? error.message)
+  }
+
+  return data as { success: boolean }
+}
+
+export async function getShiftsByDateRange(from: string, to: string): Promise<ShiftWithDetails[]> {
+  const { data, error } = await supabase
+    .from('shift')
+    .select('*, client:client_id(id, full_name, dni), specialty:specialty_id(name, available_from, available_until)')
+    .gte('assigned_date', from)
+    .lte('assigned_date', to)
+    .neq('status', 'cancelled')
+    .not('assigned_date', 'is', null)
+    .order('assigned_date', { ascending: true })
+    .order('assigned_time', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as ShiftWithDetails[]
 }
