@@ -1,4 +1,4 @@
 import { serve } from 'std/http/server.ts'
 import { handleAssignShift } from './handler.ts'
 
-serve(handleAssignShift)
+serve((req: Request) => handleAssignShift(req))
