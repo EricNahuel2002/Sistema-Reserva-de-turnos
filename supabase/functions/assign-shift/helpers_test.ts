@@ -1,4 +1,4 @@
-import { assertEquals, assertExists } from 'std/testing/asserts.ts'
+import { assertEquals } from 'std/testing/asserts.ts'
 import {
   isValidTimeFormat,
   parseTimeToDecimal,

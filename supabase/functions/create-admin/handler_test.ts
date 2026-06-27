@@ -104,19 +104,16 @@ Deno.test('handleCreateAdmin - error al actualizar profile', async () => {
         createUser: () => ({ data: { user: { id: 'new-uid' } }, error: null }),
       },
     },
-    from: () => {
-      let isProfileQuery = false
-      return {
-        select: () => ({
-          eq: () => ({
-            single: () => ({ data: { id: 1 }, error: null }),
-          }),
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => ({ data: { id: 1 }, error: null }),
         }),
-        update: () => ({
-          eq: () => ({ error: { message: 'Update failed' } }),
-        }),
-      }
-    },
+      }),
+      update: () => ({
+        eq: () => ({ error: { message: 'Update failed' } }),
+      }),
+    }),
   }
   const res = await handleCreateAdmin(req, supabase as unknown as SupabaseClientLike)
   assertEquals(res.status, 500)
