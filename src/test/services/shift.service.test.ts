@@ -49,7 +49,7 @@ const mockShiftWithDetails = (overrides?: Partial<ShiftWithDetails>): ShiftWithD
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
   client: { id: 'user-1', full_name: 'Juan Pérez', dni: '12345678' },
-  specialty: { name: 'Cardiología' },
+  specialty: { name: 'Cardiología', available_from: 8, available_until: 17 },
   ...overrides,
 })
 
@@ -73,7 +73,7 @@ describe('getAllShifts', () => {
   it('returns all shifts with client and specialty details', async () => {
     const shifts = [
       mockShiftWithDetails(),
-      mockShiftWithDetails({ id: 'shift-2', client: { id: 'user-2', full_name: 'María García', dni: '87654321' }, specialty: { name: 'Dermatología' } }),
+      mockShiftWithDetails({ id: 'shift-2', client: { id: 'user-2', full_name: 'María García', dni: '87654321' }, specialty: { name: 'Dermatología', available_from: 9, available_until: 15 } }),
     ]
     vi.mocked(supabase.from).mockReturnValue(mockSelectOrderChain(shifts) as unknown as MockSupabaseFrom)
 
