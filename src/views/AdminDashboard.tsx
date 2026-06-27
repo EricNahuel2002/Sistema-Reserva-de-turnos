@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAllShifts } from '../services/shift.service'
+import { getAllShifts, getPendingShiftsCount } from '../services/shift.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
@@ -41,13 +41,6 @@ const statusColors: Record<string, string> = {
   approved: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 }
-
-const mockMetrics = [
-  { label: 'Turnos Pendientes', value: '12', icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { label: 'Turnos Hoy', value: '8', icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Clientes Registrados', value: '45', icon: Users, color: 'text-green-600', bg: 'bg-green-50' },
-  { label: 'Especialidades', value: '6', icon: Wrench, color: 'text-purple-600', bg: 'bg-purple-50' },
-]
 
 const mockSpecialties = [
   { id: '1', name: 'Medicina General', description: 'Consultas de atención primaria y chequeos generales', value: 3000, active: true, available_day: 'Lun - Vie', available_from: 8, available_until: 17 },
@@ -132,27 +125,70 @@ export function AdminDashboard() {
 }
 
 function DashboardOverview() {
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [pendingLoading, setPendingLoading] = useState(true)
+
+  useEffect(() => {
+    getPendingShiftsCount()
+      .then(setPendingCount)
+      .catch(() => setPendingCount(0))
+      .finally(() => setPendingLoading(false))
+  }, [])
+
   return (
     <div>
       <h2 className="mb-6 text-2xl font-semibold text-gray-900">Resumen</h2>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {mockMetrics.map((metric) => {
-          const IconComponent = metric.icon
-          return (
-            <div key={metric.label} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</p>
-                </div>
-                <div className={`rounded-lg p-3 ${metric.bg}`}>
-                  <IconComponent className={`h-6 w-6 ${metric.color}`} />
-                </div>
-              </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Turnos Pendientes</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {pendingLoading ? '—' : pendingCount}
+              </p>
             </div>
-          )
-        })}
+            <div className="rounded-lg bg-yellow-50 p-3">
+              <Clock className="h-6 w-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Turnos Hoy</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+            </div>
+            <div className="rounded-lg bg-blue-50 p-3">
+              <CalendarDays className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Clientes Registrados</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-3">
+              <Users className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Especialidades</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">—</p>
+            </div>
+            <div className="rounded-lg bg-purple-50 p-3">
+              <Wrench className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

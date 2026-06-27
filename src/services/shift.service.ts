@@ -65,6 +65,16 @@ export async function getClientShifts(): Promise<ShiftWithDetails[]> {
   return (data ?? []) as ShiftWithDetails[]
 }
 
+export async function getPendingShiftsCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('shift')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending')
+
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function getShiftsByDateRange(from: string, to: string): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')

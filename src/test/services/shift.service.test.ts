@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -224,6 +224,35 @@ describe('getShiftsByDateRange', () => {
     )
 
     await expect(getShiftsByDateRange('2026-07-01', '2026-07-31')).rejects.toThrow('Database error')
+  })
+})
+
+describe('getPendingShiftsCount', () => {
+  it('returns the count of pending shifts', async () => {
+    const count = 5
+    const eq = vi.fn().mockResolvedValue({ count, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getPendingShiftsCount()
+
+    expect(result).toBe(5)
+    expect(supabase.from).toHaveBeenCalledWith('shift')
+  })
+
+  it('returns 0 when no pending shifts', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getPendingShiftsCount()
+
+    expect(result).toBe(0)
+  })
+
+  it('throws when supabase query fails', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    await expect(getPendingShiftsCount()).rejects.toThrow('Database error')
   })
 })
 
