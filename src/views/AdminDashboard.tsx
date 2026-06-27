@@ -5,7 +5,6 @@ import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
 import {
-  LayoutDashboard,
   Calendar,
   Wrench,
   X,
@@ -23,10 +22,9 @@ import {
   Plus,
 } from 'lucide-react'
 
-type Section = 'dashboard' | 'shifts' | 'specialties'
+type Section = 'shifts' | 'specialties'
 
 const navItems: { id: Section; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
   { id: 'shifts', label: 'Turnos', icon: Calendar },
   { id: 'specialties', label: 'Especialidades', icon: Wrench },
 ]
@@ -53,7 +51,7 @@ const mockSpecialties = [
 ]
 
 export function AdminDashboard() {
-  const [activeSection, setActiveSection] = useState<Section>('dashboard')
+  const [activeSection, setActiveSection] = useState<Section>('shifts')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -116,7 +114,6 @@ export function AdminDashboard() {
       {/* Main content */}
       <main className="lg:ml-64">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {activeSection === 'dashboard' && <DashboardOverview />}
           {activeSection === 'shifts' && <ShiftsManagement />}
           {activeSection === 'specialties' && <SpecialtiesManagement />}
         </div>
@@ -125,7 +122,19 @@ export function AdminDashboard() {
   )
 }
 
-function DashboardOverview() {
+function formatISODate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-')
+  return `${d}/${m}/${y}`
+}
+
+function ShiftsManagement() {
+  const [shifts, setShifts] = useState<ShiftWithDetails[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<ShiftStatus | 'all'>('all')
+  const [selectedShift, setSelectedShift] = useState<ShiftWithDetails | null>(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
   const [pendingCount, setPendingCount] = useState<number | null>(null)
   const [pendingLoading, setPendingLoading] = useState(true)
   const [todayCount, setTodayCount] = useState<number | null>(null)
@@ -135,7 +144,17 @@ function DashboardOverview() {
   const [specialtiesCount, setSpecialtiesCount] = useState<number | null>(null)
   const [specialtiesLoading, setSpecialtiesLoading] = useState(true)
 
+  const loadShifts = () => {
+    setLoading(true)
+    getAllShifts()
+      .then(setShifts)
+      .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar los turnos'))
+      .finally(() => setLoading(false))
+  }
+
   useEffect(() => {
+    loadShifts()
+
     getPendingShiftsCount()
       .then(setPendingCount)
       .catch(() => setPendingCount(0))
@@ -157,9 +176,20 @@ function DashboardOverview() {
       .finally(() => setSpecialtiesLoading(false))
   }, [])
 
+  const filteredShifts = shifts.filter((shift) => {
+    const matchesSearch =
+      !search ||
+      (shift.client?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (shift.client?.dni ?? '').includes(search)
+    const matchesStatus = statusFilter === 'all' || shift.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  if (loading) return <LoadingSpinner />
+
   return (
     <div>
-      <h2 className="mb-6 text-2xl font-semibold text-gray-900">Resumen</h2>
+      <h2 className="mb-6 text-2xl font-semibold text-gray-900">Gestión de Turnos</h2>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -218,55 +248,6 @@ function DashboardOverview() {
           </div>
         </div>
       </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-        <p className="text-sm text-gray-500">No hay actividad reciente para mostrar.</p>
-      </div>
-    </div>
-  )
-}
-
-function formatISODate(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
-}
-
-function ShiftsManagement() {
-  const [shifts, setShifts] = useState<ShiftWithDetails[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<ShiftStatus | 'all'>('all')
-  const [selectedShift, setSelectedShift] = useState<ShiftWithDetails | null>(null)
-  const [showAssignModal, setShowAssignModal] = useState(false)
-
-  const loadShifts = () => {
-    setLoading(true)
-    getAllShifts()
-      .then(setShifts)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar los turnos'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    loadShifts()
-  }, [])
-
-  const filteredShifts = shifts.filter((shift) => {
-    const matchesSearch =
-      !search ||
-      (shift.client?.full_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (shift.client?.dni ?? '').includes(search)
-    const matchesStatus = statusFilter === 'all' || shift.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
-
-  if (loading) return <LoadingSpinner />
-
-  return (
-    <div>
-      <h2 className="mb-6 text-2xl font-semibold text-gray-900">Gestión de Turnos</h2>
 
       {error && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
