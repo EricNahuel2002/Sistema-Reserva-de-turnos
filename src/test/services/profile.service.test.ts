@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { getProfile, getSpecialties } from '../../services/profile.service'
+import { getProfile, getSpecialties, getSpecialtiesCount } from '../../services/profile.service'
 import type { Profile, Specialty } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -62,6 +62,35 @@ describe('getProfile', () => {
     const result = await getProfile('user-1')
 
     expect(result).toBeNull()
+  })
+})
+
+describe('getSpecialtiesCount', () => {
+  it('returns the count of active specialties', async () => {
+    const count = 6
+    const eq = vi.fn().mockResolvedValue({ count, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getSpecialtiesCount()
+
+    expect(result).toBe(6)
+    expect(supabase.from).toHaveBeenCalledWith('specialty')
+  })
+
+  it('returns 0 when no active specialties', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    const result = await getSpecialtiesCount()
+
+    expect(result).toBe(0)
+  })
+
+  it('throws when supabase query fails', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
+
+    await expect(getSpecialtiesCount()).rejects.toThrow('Database error')
   })
 })
 

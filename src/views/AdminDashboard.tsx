@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
-import { getAllShifts } from '../services/shift.service'
+import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
+import { getSpecialtiesCount } from '../services/profile.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
 import type { ShiftWithDetails, ShiftStatus } from '../types'
 import {
-  LayoutDashboard,
   Calendar,
   Wrench,
-  Users,
   X,
   Search,
   Menu,
   X as XIcon,
   Clock,
   CalendarDays,
+  CheckCircle,
   Pencil,
   Trash2,
   ChevronRight,
@@ -22,10 +22,9 @@ import {
   Plus,
 } from 'lucide-react'
 
-type Section = 'dashboard' | 'shifts' | 'specialties'
+type Section = 'shifts' | 'specialties'
 
 const navItems: { id: Section; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { id: 'dashboard', label: 'Resumen', icon: LayoutDashboard },
   { id: 'shifts', label: 'Turnos', icon: Calendar },
   { id: 'specialties', label: 'Especialidades', icon: Wrench },
 ]
@@ -42,13 +41,6 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 }
 
-const mockMetrics = [
-  { label: 'Turnos Pendientes', value: '12', icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  { label: 'Turnos Hoy', value: '8', icon: CalendarDays, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Clientes Registrados', value: '45', icon: Users, color: 'text-green-600', bg: 'bg-green-50' },
-  { label: 'Especialidades', value: '6', icon: Wrench, color: 'text-purple-600', bg: 'bg-purple-50' },
-]
-
 const mockSpecialties = [
   { id: '1', name: 'Medicina General', description: 'Consultas de atención primaria y chequeos generales', value: 3000, active: true, available_day: 'Lun - Vie', available_from: 8, available_until: 17 },
   { id: '2', name: 'Odontología', description: 'Cuidado dental y limpiezas', value: 5000, active: true, available_day: 'Mar - Jue', available_from: 9, available_until: 15 },
@@ -59,7 +51,7 @@ const mockSpecialties = [
 ]
 
 export function AdminDashboard() {
-  const [activeSection, setActiveSection] = useState<Section>('dashboard')
+  const [activeSection, setActiveSection] = useState<Section>('shifts')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -122,43 +114,10 @@ export function AdminDashboard() {
       {/* Main content */}
       <main className="lg:ml-64">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {activeSection === 'dashboard' && <DashboardOverview />}
           {activeSection === 'shifts' && <ShiftsManagement />}
           {activeSection === 'specialties' && <SpecialtiesManagement />}
         </div>
       </main>
-    </div>
-  )
-}
-
-function DashboardOverview() {
-  return (
-    <div>
-      <h2 className="mb-6 text-2xl font-semibold text-gray-900">Resumen</h2>
-
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {mockMetrics.map((metric) => {
-          const IconComponent = metric.icon
-          return (
-            <div key={metric.label} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</p>
-                </div>
-                <div className={`rounded-lg p-3 ${metric.bg}`}>
-                  <IconComponent className={`h-6 w-6 ${metric.color}`} />
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-        <p className="text-sm text-gray-500">No hay actividad reciente para mostrar.</p>
-      </div>
     </div>
   )
 }
@@ -176,6 +135,14 @@ function ShiftsManagement() {
   const [statusFilter, setStatusFilter] = useState<ShiftStatus | 'all'>('all')
   const [selectedShift, setSelectedShift] = useState<ShiftWithDetails | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [pendingCount, setPendingCount] = useState<number | null>(null)
+  const [pendingLoading, setPendingLoading] = useState(true)
+  const [todayCount, setTodayCount] = useState<number | null>(null)
+  const [todayLoading, setTodayLoading] = useState(true)
+  const [approvedCount, setApprovedCount] = useState<number | null>(null)
+  const [approvedLoading, setApprovedLoading] = useState(true)
+  const [specialtiesCount, setSpecialtiesCount] = useState<number | null>(null)
+  const [specialtiesLoading, setSpecialtiesLoading] = useState(true)
 
   const loadShifts = () => {
     setLoading(true)
@@ -187,6 +154,26 @@ function ShiftsManagement() {
 
   useEffect(() => {
     loadShifts()
+
+    getPendingShiftsCount()
+      .then(setPendingCount)
+      .catch(() => setPendingCount(0))
+      .finally(() => setPendingLoading(false))
+
+    getTodayShiftsCount()
+      .then(setTodayCount)
+      .catch(() => setTodayCount(0))
+      .finally(() => setTodayLoading(false))
+
+    getApprovedShiftsCount()
+      .then(setApprovedCount)
+      .catch(() => setApprovedCount(0))
+      .finally(() => setApprovedLoading(false))
+
+    getSpecialtiesCount()
+      .then(setSpecialtiesCount)
+      .catch(() => setSpecialtiesCount(0))
+      .finally(() => setSpecialtiesLoading(false))
   }, [])
 
   const filteredShifts = shifts.filter((shift) => {
@@ -203,6 +190,64 @@ function ShiftsManagement() {
   return (
     <div>
       <h2 className="mb-6 text-2xl font-semibold text-gray-900">Gestión de Turnos</h2>
+
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Turnos Pendientes</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {pendingLoading ? '—' : pendingCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-yellow-50 p-3">
+              <Clock className="h-6 w-6 text-yellow-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Turnos Hoy</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {todayLoading ? '—' : todayCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-blue-50 p-3">
+              <CalendarDays className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Turnos Aprobados</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {approvedLoading ? '—' : approvedCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-3">
+              <CheckCircle className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Especialidades</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900">
+                {specialtiesLoading ? '—' : specialtiesCount}
+              </p>
+            </div>
+            <div className="rounded-lg bg-purple-50 p-3">
+              <Wrench className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">

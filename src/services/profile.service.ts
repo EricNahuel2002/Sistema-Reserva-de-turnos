@@ -16,6 +16,16 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return data as Profile | null
 }
 
+export async function getSpecialtiesCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('specialty')
+    .select('*', { count: 'exact', head: true })
+    .eq('active', true)
+
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function getSpecialties(): Promise<Specialty[]> {
   const { data } = await supabase
     .from('specialty')
