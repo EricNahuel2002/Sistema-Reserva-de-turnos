@@ -12,7 +12,7 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelado',
 }
 
-const statusColors: Record<string, string> = {
+const statusBadgeColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   approved: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
@@ -30,21 +30,60 @@ function formatISODate(dateStr: string): string {
   return `${d}/${m}/${y}`
 }
 
-export function ClientAgenda() {
-  const [shifts, setShifts] = useState<ShiftWithDetails[]>([])
-  const [loading, setLoading] = useState(true)
+function getDotColor(shifts: ShiftWithDetails[]): string {
+  if (shifts.some((s) => s.status === 'approved')) return 'bg-green-500'
+  if (shifts.some((s) => s.status === 'pending')) return 'bg-yellow-400'
+  return 'bg-blue-500'
+}
+
+function CalendarSkeleton() {
+  return (
+    <div className="mb-8 animate-pulse">
+      <div className="mb-4 h-7 w-24 rounded bg-gray-200" />
+      <div className="rounded-xl bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div className="h-5 w-32 rounded bg-gray-200" />
+          <div className="h-5 w-16 rounded bg-gray-200" />
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded bg-gray-100" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type Props = {
+  shifts?: ShiftWithDetails[]
+  loading?: boolean
+}
+
+export function ClientAgenda({ shifts: propShifts, loading: propLoading }: Props) {
+  const [internalShifts, setInternalShifts] = useState<ShiftWithDetails[]>([])
+  const [internalLoading, setInternalLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
+  const shifts = propShifts ?? internalShifts
+  const loading = propLoading ?? internalLoading
+
   useEffect(() => {
-    setLoading(true)
+    if (propShifts) {
+      setInternalLoading(false)
+      return
+    }
+    setInternalLoading(true)
     setError(null)
     getClientShifts()
-      .then(setShifts)
+      .then(setInternalShifts)
       .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar turnos'))
-      .finally(() => setLoading(false))
-  }, [])
+      .finally(() => setInternalLoading(false))
+  }, [propShifts])
 
   const monthShiftsMap = useMemo(() => {
     const map = new Map<string, ShiftWithDetails[]>()
@@ -84,16 +123,7 @@ export function ClientAgenda() {
     setSelectedDate(dateStr)
   }
 
-  if (loading) {
-    return (
-      <div className="mb-8">
-        <h2 className="mb-4 text-xl font-semibold text-gray-900">Mi Agenda</h2>
-        <div className="rounded-xl bg-white p-8 text-center text-sm text-gray-400 shadow-sm">
-          Cargando turnos...
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <CalendarSkeleton />
 
   if (error) {
     return (
@@ -132,13 +162,13 @@ export function ClientAgenda() {
           <div className="flex items-center gap-1">
             <button
               onClick={prevMonth}
-              className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+              className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-100"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={nextMonth}
-              className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+              className="rounded-lg p-1 text-gray-500 transition-colors hover:bg-gray-100"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -158,7 +188,8 @@ export function ClientAgenda() {
               const dateStr = day
                 ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 : null
-              const hasShift = dateStr != null && monthShiftsMap.has(dateStr)
+              const dayShifts = dateStr ? (monthShiftsMap.get(dateStr) ?? []) : []
+              const hasShift = dayShifts.length > 0
               const isSelected = dateStr === selectedDate
               const isToday = dateStr === today
 
@@ -167,7 +198,7 @@ export function ClientAgenda() {
                   key={i}
                   disabled={!day || !hasShift}
                   onClick={() => { if (day) handleDayClick(day) }}
-                  className={`relative flex flex-col items-center py-2 text-sm transition-colors ${
+                  className={`relative flex flex-col items-center py-2 text-sm transition-all ${
                     !day
                       ? 'cursor-default'
                       : !hasShift
@@ -183,7 +214,7 @@ export function ClientAgenda() {
                     <>
                       <span>{day}</span>
                       {hasShift && (
-                        <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        <span className={`mt-0.5 h-1.5 w-1.5 rounded-full ${getDotColor(dayShifts)}`} />
                       )}
                     </>
                   )}
@@ -202,7 +233,7 @@ export function ClientAgenda() {
               {shiftsForSelectedDate.map((shift) => (
                 <div
                   key={shift.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4"
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4 transition-colors hover:bg-gray-100"
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-gray-900">
@@ -215,9 +246,7 @@ export function ClientAgenda() {
                     )}
                   </div>
                   <span
-                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      statusColors[shift.status] ?? 'bg-gray-100 text-gray-800'
-                    }`}
+                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeColors[shift.status] ?? 'bg-gray-100 text-gray-800'}`}
                   >
                     {statusLabels[shift.status] ?? shift.status}
                   </span>
@@ -232,6 +261,15 @@ export function ClientAgenda() {
             <p className="text-sm text-gray-400">No hay turnos en esta fecha.</p>
           </div>
         )}
+      </div>
+
+      <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-yellow-400" /> Pendiente
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-green-500" /> Aprobado
+        </span>
       </div>
     </div>
   )

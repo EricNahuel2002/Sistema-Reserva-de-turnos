@@ -1,11 +1,7 @@
-function formatHour(h: number | null): string | null {
-  if (h === null || h === undefined) return null
-  return `${String(h).padStart(2, '0')}:00`
-}
-
-import type { Specialty } from '../types'
-
 import { useEffect } from 'react'
+import { X, CheckCircle, Calendar, Clock } from 'lucide-react'
+import { formatHour } from '../lib/utils'
+import type { Specialty } from '../types'
 
 type Props = {
   specialty: Specialty | null
@@ -38,19 +34,17 @@ export function SpecialtyModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity"
       onClick={onClose}
     >
       <div
-        className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+        className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-lg animate-[fadeIn_200ms_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         {successMessage ? (
           <div className="flex flex-col items-center py-8">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <p className="text-lg font-semibold text-gray-900">{successMessage}</p>
           </div>
@@ -69,19 +63,25 @@ export function SpecialtyModal({
                 onClick={onClose}
                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
               >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-5 w-5" />
               </button>
             </div>
             <p className="mt-4 text-gray-600">
               {specialty.description ?? 'Sin descripción disponible.'}
             </p>
             {(specialty.available_day || from || until) && (
-              <div className="mt-4 space-y-1 text-sm text-gray-500">
-                {specialty.available_day && <p>📅 Día: {specialty.available_day}</p>}
+              <div className="mt-4 space-y-2 text-sm text-gray-500">
+                {specialty.available_day && (
+                  <p className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    Día: {specialty.available_day}
+                  </p>
+                )}
                 {(from || until) && (
-                  <p>🕒 Horario: {from ?? '—'} - {until ?? '—'}</p>
+                  <p className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-400" />
+                    Horario: {from ?? '—'} - {until ?? '—'}
+                  </p>
                 )}
               </div>
             )}
@@ -94,7 +94,7 @@ export function SpecialtyModal({
             <button
               onClick={onRequestAppointment}
               disabled={isSubmitting}
-              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? 'Solicitando...' : 'Pedir turno'}
             </button>
