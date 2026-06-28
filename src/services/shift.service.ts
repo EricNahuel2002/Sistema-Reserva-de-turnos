@@ -12,22 +12,16 @@ export async function getAllShifts(): Promise<ShiftWithDetails[]> {
 }
 
 export async function createShift(specialtyId: string): Promise<Shift> {
-  const { data: userData } = await supabase.auth.getUser()
-  const clientId = userData.user?.id
-  if (!clientId) throw new Error('Usuario no autenticado')
+  const { data, error } = await supabase.functions.invoke('create-shift', {
+    body: { specialty_id: specialtyId },
+  })
 
-  const { data, error } = await supabase
-    .from('shift')
-    .insert({
-      client_id: clientId,
-      specialty_id: specialtyId,
-      status: 'pending',
-    })
-    .select()
-    .single()
+  if (error) {
+    const body = (error as { context?: { body?: { error?: string } } })?.context?.body
+    throw new Error(body?.error ?? error.message)
+  }
 
-  if (error) throw error
-  return data as Shift
+  return (data as { shift: Shift }).shift
 }
 
 export async function assignShift(

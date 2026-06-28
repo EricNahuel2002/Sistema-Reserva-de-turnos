@@ -53,12 +53,6 @@ const mockShiftWithDetails = (overrides?: Partial<ShiftWithDetails>): ShiftWithD
   ...overrides,
 })
 
-function mockInsertChain(data: unknown) {
-  const single = vi.fn().mockResolvedValue({ data, error: null })
-  const select = vi.fn(() => ({ single }))
-  return { insert: vi.fn(() => ({ select })), select, single }
-}
-
 function mockSelectOrderChain(data: unknown) {
   const order = vi.fn().mockResolvedValue({ data, error: null })
   const select = vi.fn(() => ({ order }))
@@ -101,36 +95,37 @@ describe('getAllShifts', () => {
 })
 
 describe('createShift', () => {
-  it('creates a shift with pending status', async () => {
+  it('creates a shift via create-shift edge function', async () => {
     const shift = mockShift()
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
-    vi.mocked(supabase.from).mockReturnValue(mockInsertChain(shift) as unknown as MockSupabaseFrom)
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true, shift }, error: null })
 
     const result = await createShift('spec-1')
 
     expect(result).toEqual(shift)
-    expect(supabase.from).toHaveBeenCalledWith('shift')
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('create-shift', {
+      body: { specialty_id: 'spec-1' },
+    })
   })
 
-  it('throws when user is not authenticated', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as unknown as MockUserResponse)
+  it('throws when edge function returns an error with context body', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Failed to invoke function',
+        context: { status: 400, body: { error: 'Especialidad no encontrada' } },
+      },
+    })
 
-    await expect(createShift('spec-1')).rejects.toThrow('Usuario no autenticado')
+    await expect(createShift('spec-1')).rejects.toThrow('Especialidad no encontrada')
   })
 
-  it('throws when supabase insert fails', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: null }, error: null } as unknown as MockUserResponse)
+  it('falls back to error.message when context.body.error is missing', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: { message: 'Network error' },
+    })
 
-    await expect(createShift('spec-1')).rejects.toThrow('Usuario no autenticado')
-  })
-
-  it('throws when supabase insert fails', async () => {
-    vi.mocked(supabase.auth.getUser).mockResolvedValue({ data: { user: mockUser }, error: null })
-    const single = vi.fn().mockResolvedValue({ data: null, error: new Error('Database error') })
-    const select = vi.fn(() => ({ single }))
-    vi.mocked(supabase.from).mockReturnValue({ insert: vi.fn(() => ({ select })) } as unknown as MockSupabaseFrom)
-
-    await expect(createShift('spec-1')).rejects.toThrow('Database error')
+    await expect(createShift('spec-1')).rejects.toThrow('Network error')
   })
 })
 
