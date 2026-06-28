@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { registerClient } from '../services/auth.service'
 import { SubmitButton } from '../components/ui/SubmitButton'
 import { User, FileText, Mail, Lock } from 'lucide-react'
 
 export function Register() {
-  const { signUp } = useAuth()
   const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [dni, setDni] = useState('')
@@ -18,13 +17,15 @@ export function Register() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error } = await signUp(email, password, fullName, dni)
-    if (error) {
-      setError(error.message)
-    } else {
+
+    try {
+      await registerClient(email, password, fullName, dni)
       navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error inesperado')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

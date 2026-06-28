@@ -8,7 +8,6 @@ vi.mock('../../lib/supabase', () => ({
     auth: {
       getSession: vi.fn(),
       onAuthStateChange: vi.fn(),
-      signUp: vi.fn(),
       signInWithPassword: vi.fn(),
       signInWithOAuth: vi.fn(),
       signOut: vi.fn(),
@@ -154,28 +153,6 @@ describe('useAuth', () => {
     expect(result.current.user).toBeNull()
     expect(result.current.session).toBeNull()
     expect(result.current.profile).toBeNull()
-  })
-
-  it('signUp calls supabase auth with provided data', async () => {
-    vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: { session: null }, error: null })
-    vi.mocked(supabase.auth.onAuthStateChange).mockReturnValue({
-      data: { subscription: mockSubscription },
-    })
-    vi.mocked(supabase.auth.signUp).mockResolvedValue(mockAuthResponse)
-
-    const { result } = renderHook(() => useAuth())
-
-    await waitFor(() => expect(result.current.loading).toBe(false))
-
-    await act(async () => {
-      await result.current.signUp('email@test.com', 'pass123', 'Juan', '12345678')
-    })
-
-    expect(supabase.auth.signUp).toHaveBeenCalledWith({
-      email: 'email@test.com',
-      password: 'pass123',
-      options: { data: { full_name: 'Juan', dni: '12345678' } },
-    })
   })
 
   it('signIn calls supabase auth with email and password', async () => {

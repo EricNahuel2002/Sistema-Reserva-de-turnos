@@ -52,17 +52,6 @@ export function useAuth() {
     }
   }, [])
 
-  const signUp = async (email: string, password: string, fullName?: string, dni?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, dni },
-      },
-    })
-    return { data, error }
-  }
-
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     return { data, error }
@@ -77,5 +66,5 @@ export function useAuth() {
     await supabase.auth.signOut()
   }
 
-  return { user, session, profile, loading, signUp, signIn, signInWithGoogle, signOut }
+  return { user, session, profile, loading, signIn, signInWithGoogle, signOut }
 }
