@@ -150,26 +150,28 @@ describe('Dashboard', () => {
     expect(screen.queryByText('No hay especialidades disponibles')).not.toBeInTheDocument()
   })
 
-  it('greets the user and shows upcoming shift count', async () => {
+  it('renders heading and passes shifts to ClientAgenda', async () => {
     vi.mocked(getSpecialties).mockResolvedValue([])
     vi.mocked(getClientShifts).mockResolvedValue([mockShift, { ...mockShift, id: 'shift-2' }])
 
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText('Hola, Juan')).toBeInTheDocument()
+      expect(
+        screen.getByText('¿Necesitás un turno? Elegí una especialidad y solicitá el turno que quieras.'),
+      ).toBeInTheDocument()
     })
-    expect(screen.getByText('Tenés 2 turnos próximos')).toBeInTheDocument()
+    expect(screen.getByTestId('client-agenda')).toHaveAttribute('data-shifts-count', '2')
   })
 
-  it('shows message when there are no shifts', async () => {
+  it('passes empty shifts to ClientAgenda when there are none', async () => {
     vi.mocked(getSpecialties).mockResolvedValue([])
     vi.mocked(getClientShifts).mockResolvedValue([])
 
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText('No tenés turnos asignados todavía')).toBeInTheDocument()
+      expect(screen.getByTestId('client-agenda')).toHaveAttribute('data-shifts-count', '0')
     })
   })
 

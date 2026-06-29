@@ -64,7 +64,7 @@ export function AdminDashboard() {
         >
           {sidebarOpen ? <XIcon className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
-        <h1 className="text-base font-semibold text-gray-900">Panel Admin</h1>
+        <h1 className="text-base font-semibold text-gray-900">Panel del administrador</h1>
       </div>
 
       {/* Overlay */}
@@ -81,9 +81,17 @@ export function AdminDashboard() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-16 items-center border-b border-gray-200 px-6">
-          <Calendar className="mr-2 h-6 w-6 text-blue-600" />
-          <span className="text-lg font-bold text-gray-900">Admin Panel</span>
+        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
+          <div className="flex items-center">
+            <Calendar className="mr-2 h-6 w-6 text-blue-600" />
+            <span className="text-lg font-bold text-gray-900">Sistema Turnos</span>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 lg:hidden"
+          >
+            <XIcon className="h-5 w-5" />
+          </button>
         </div>
 
         <nav className="space-y-1 p-4">

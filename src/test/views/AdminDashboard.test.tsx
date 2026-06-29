@@ -170,7 +170,8 @@ describe('AdminDashboard - ShiftsManagement', () => {
       expect(screen.getByText(/Error de red/)).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: /X-icon/i }))
+    const buttons = screen.getAllByRole('button', { name: /X-icon/i })
+    fireEvent.click(buttons[1]!)
 
     expect(screen.queryByText(/Error de red/)).not.toBeInTheDocument()
   })
