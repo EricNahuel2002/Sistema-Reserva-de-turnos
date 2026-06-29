@@ -89,6 +89,22 @@ export async function getCancelledShiftsCount(): Promise<number> {
   return count ?? 0
 }
 
+export async function cancelShift(
+  shiftId: string,
+  adminNotes?: string,
+): Promise<{ success: boolean }> {
+  const { data, error } = await supabase.functions.invoke('cancel-shift', {
+    body: { shift_id: shiftId, admin_notes: adminNotes },
+  })
+
+  if (error) {
+    const body = (error as { context?: { body?: { error?: string } } })?.context?.body
+    throw new Error(body?.error ?? error.message)
+  }
+
+  return data as { success: boolean }
+}
+
 export async function getShiftsByDateRange(from: string, to: string): Promise<ShiftWithDetails[]> {
   const { data, error } = await supabase
     .from('shift')

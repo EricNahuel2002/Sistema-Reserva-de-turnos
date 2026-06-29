@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { AssignShiftModal } from '../../components/AssignShiftModal'
-import { assignShift, getShiftsByDateRange } from '../../services/shift.service'
+import { assignShift, cancelShift, getShiftsByDateRange } from '../../services/shift.service'
 import type { ShiftWithDetails } from '../../types'
 
 vi.mock('../../services/shift.service')
@@ -11,6 +11,8 @@ vi.mock('lucide-react', () => ({
   ChevronLeft: () => 'ChevronLeft-icon',
   ChevronRight: () => 'ChevronRight-icon',
   AlertCircle: () => 'AlertCircle-icon',
+  XCircle: () => 'XCircle-icon',
+  Loader2: () => 'Loader2-icon',
 }))
 
 const baseShift = {
@@ -99,6 +101,75 @@ describe('AssignShiftModal', () => {
     renderModal(approvedShift)
     await settle()
     expect(screen.getByText(/ya fue aprobado/)).toBeInTheDocument()
+  })
+
+  it('shows cancel button for approved shifts', async () => {
+    renderModal(approvedShift)
+    await settle()
+    expect(screen.getByRole('button', { name: /cancelar turno/i })).toBeInTheDocument()
+  })
+
+  it('opens confirmation modal when cancel is clicked', async () => {
+    renderModal(approvedShift)
+    await settle()
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar turno/i }))
+
+    expect(screen.getByText('¿Estás seguro de que querés cancelar este turno?')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sí, cancelar turno/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /volver/i })).toBeInTheDocument()
+  })
+
+  it('calls cancelShift and closes both modals after success', async () => {
+    vi.mocked(cancelShift).mockResolvedValue({ success: true })
+    const onClose = vi.fn()
+    const onAssigned = vi.fn()
+
+    render(
+      <BrowserRouter>
+        <AssignShiftModal
+          shift={approvedShift}
+          open={true}
+          onClose={onClose}
+          onAssigned={onAssigned}
+        />
+      </BrowserRouter>,
+    )
+    await settle()
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar turno/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sí, cancelar turno/i }))
+    await settle()
+
+    expect(cancelShift).toHaveBeenCalledWith('shift-1')
+    expect(onAssigned).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('shows loading spinner while cancelling', async () => {
+    let resolveCancel: (value: unknown) => void
+    vi.mocked(cancelShift).mockReturnValue(new Promise((r) => { resolveCancel = r }) as never)
+    const onClose = vi.fn()
+    const onAssigned = vi.fn()
+
+    render(
+      <BrowserRouter>
+        <AssignShiftModal
+          shift={approvedShift}
+          open={true}
+          onClose={onClose}
+          onAssigned={onAssigned}
+        />
+      </BrowserRouter>,
+    )
+    await settle()
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar turno/i }))
+    fireEvent.click(screen.getByRole('button', { name: /sí, cancelar turno/i }))
+
+    expect(screen.getByText('Cancelando turno...')).toBeInTheDocument()
+    resolveCancel!(undefined)
+    await settle()
   })
 
   it('shows a message when the shift is cancelled', async () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getCancelledShiftsCount, getApprovedShiftsCount } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, cancelShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getCancelledShiftsCount, getApprovedShiftsCount } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -160,6 +160,51 @@ describe('assignShift', () => {
     })
 
     await expect(assignShift('shift-1', '2026-07-15', '10:00')).rejects.toThrow('Network error')
+  })
+})
+
+describe('cancelShift', () => {
+  it('invokes cancel-shift edge function with shift_id only', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true }, error: null })
+
+    const result = await cancelShift('shift-1')
+
+    expect(result).toEqual({ success: true })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('cancel-shift', {
+      body: { shift_id: 'shift-1', admin_notes: undefined },
+    })
+  })
+
+  it('invokes cancel-shift with admin_notes', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true }, error: null })
+
+    const result = await cancelShift('shift-1', 'Cancelado por inasistencia')
+
+    expect(result).toEqual({ success: true })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('cancel-shift', {
+      body: { shift_id: 'shift-1', admin_notes: 'Cancelado por inasistencia' },
+    })
+  })
+
+  it('throws when edge function returns an error with context body', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Failed to invoke function',
+        context: { status: 400, body: { error: 'El turno ya está cancelado' } },
+      },
+    })
+
+    await expect(cancelShift('shift-1')).rejects.toThrow('El turno ya está cancelado')
+  })
+
+  it('falls back to error.message when context.body.error is missing', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: { message: 'Network error' },
+    })
+
+    await expect(cancelShift('shift-1')).rejects.toThrow('Network error')
   })
 })
 
