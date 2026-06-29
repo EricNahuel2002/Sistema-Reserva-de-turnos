@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getAllShifts, getPendingShiftsCount, getCancelledShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
-import { getSpecialtiesCount } from '../services/profile.service'
+import { getSpecialtiesCount, getAllSpecialties } from '../services/profile.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
-import type { ShiftWithDetails, ShiftStatus } from '../types'
+import { AddSpecialtyModal } from '../components/AddSpecialtyModal'
+import type { ShiftWithDetails, ShiftStatus, Specialty } from '../types'
 import {
   Calendar,
   Wrench,
@@ -40,15 +41,6 @@ const statusColors: Record<string, string> = {
   approved: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
 }
-
-const mockSpecialties = [
-  { id: '1', name: 'Medicina General', description: 'Consultas de atención primaria y chequeos generales', value: 3000, active: true, available_day: 'Lun - Vie', available_from: 8, available_until: 17 },
-  { id: '2', name: 'Odontología', description: 'Cuidado dental y limpiezas', value: 5000, active: true, available_day: 'Mar - Jue', available_from: 9, available_until: 15 },
-  { id: '3', name: 'Pediatría', description: 'Atención médica para niños', value: 3500, active: true, available_day: 'Lun - Mié', available_from: 8, available_until: 14 },
-  { id: '4', name: 'Dermatología', description: 'Tratamientos de la piel', value: 4500, active: false, available_day: 'Jue - Vie', available_from: 10, available_until: 16 },
-  { id: '5', name: 'Psicología', description: 'Terapia y orientación psicológica', value: 4000, active: true, available_day: 'Lun - Vie', available_from: 9, available_until: 18 },
-  { id: '6', name: 'Nutrición', description: 'Planes alimentarios y seguimiento', value: 2500, active: true, available_day: 'Mar - Sáb', available_from: 8, available_until: 13 },
-]
 
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<Section>('shifts')
@@ -381,61 +373,95 @@ function ShiftsManagement() {
 }
 
 function SpecialtiesManagement() {
+  const [specialties, setSpecialties] = useState<Specialty[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
+
+  const loadSpecialties = () => {
+    setLoading(true)
+    getAllSpecialties()
+      .then(setSpecialties)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadSpecialties()
+  }, [])
+
+  if (loading) return <LoadingSpinner />
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-semibold text-gray-900">Especialidades</h2>
-        <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
           <Plus className="h-4 w-4" />
           Agregar
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Nombre</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Descripción</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Precio</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-500">Disponibilidad</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Activo</th>
-                <th className="px-4 py-3 text-center font-medium text-gray-500">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {mockSpecialties.map((specialty) => (
-                <tr key={specialty.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{specialty.name}</td>
-                  <td className="max-w-xs truncate px-4 py-3 text-gray-600">{specialty.description}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-900">
-                    ${specialty.value.toLocaleString('es-AR')}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-600">
-                    {specialty.available_day} {specialty.available_from}:00 - {specialty.available_until}:00
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <span
-                      className={`inline-block h-5 w-5 rounded-full ${specialty.active ? 'bg-green-500' : 'bg-gray-300'}`}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" title="Editar">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" title="Eliminar">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {specialties.length === 0 ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
+          <Wrench className="mx-auto h-12 w-12 text-gray-300" />
+          <p className="mt-3 text-sm text-gray-500">No hay especialidades registradas</p>
         </div>
-      </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">Nombre</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">Descripción</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">Precio</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">Disponibilidad</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">Activo</th>
+                  <th className="px-4 py-3 text-center font-medium text-gray-500">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {specialties.map((specialty) => (
+                  <tr key={specialty.id} className="hover:bg-gray-50">
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{specialty.name}</td>
+                    <td className="max-w-xs truncate px-4 py-3 text-gray-600">{specialty.description ?? '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-900">
+                      {specialty.value != null ? `$${specialty.value.toLocaleString('es-AR')}` : '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      {specialty.available_day ? `${specialty.available_day} ${specialty.available_from ?? '?'}:00 - ${specialty.available_until ?? '?'}:00` : '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <span
+                        className={`inline-block h-5 w-5 rounded-full ${specialty.active ? 'bg-green-500' : 'bg-gray-300'}`}
+                      />
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" title="Editar">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" title="Eliminar">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <AddSpecialtyModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onCreated={loadSpecialties}
+      />
     </div>
   )
 }

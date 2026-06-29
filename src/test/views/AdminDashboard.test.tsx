@@ -6,9 +6,9 @@ import {
   getCancelledShiftsCount,
   getApprovedShiftsCount,
 } from '../../services/shift.service'
-import { getSpecialtiesCount } from '../../services/profile.service'
+import { getSpecialtiesCount, getAllSpecialties } from '../../services/profile.service'
 import { AdminDashboard } from '../../views/AdminDashboard'
-import type { ShiftWithDetails } from '../../types'
+import type { ShiftWithDetails, Specialty } from '../../types'
 
 vi.mock('../../services/shift.service')
 vi.mock('../../services/profile.service')
@@ -41,6 +41,30 @@ vi.mock('../../components/AssignShiftModal', () => ({
   },
 }))
 
+vi.mock('../../components/AddSpecialtyModal', () => ({
+  AddSpecialtyModal: function MockAddSpecialtyModal({
+    open,
+    onClose,
+    onCreated,
+  }: {
+    open: boolean
+    onClose: () => void
+    onCreated: () => void
+  }) {
+    if (!open) return null
+    return (
+      <div data-testid="add-specialty-modal">
+        <button data-testid="modal-created-btn" onClick={onCreated}>
+          Creado
+        </button>
+        <button data-testid="modal-close-btn" onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
+    )
+  },
+}))
+
 vi.mock('lucide-react', () => ({
   Calendar: () => 'Calendar-icon',
   Wrench: () => 'Wrench-icon',
@@ -54,7 +78,49 @@ vi.mock('lucide-react', () => ({
   AlertCircle: () => 'AlertCircle-icon',
   Filter: () => 'Filter-icon',
   Loader2: () => 'Loader2-icon',
+  Plus: () => 'Plus-icon',
+  Pencil: () => 'Pencil-icon',
+  Trash2: () => 'Trash2-icon',
 }))
+
+const mockSpecialties: Specialty[] = [
+  {
+    id: 'spec-1',
+    name: 'Medicina General',
+    description: 'Consultas de atención primaria',
+    value: 3000,
+    active: true,
+    available_day: 'Lun - Vie',
+    available_from: 8,
+    available_until: 17,
+    image: null,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'spec-2',
+    name: 'Odontología',
+    description: 'Cuidado dental',
+    value: 5000,
+    active: true,
+    available_day: 'Mar - Jue',
+    available_from: 9,
+    available_until: 15,
+    image: null,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 'spec-3',
+    name: 'Dermatología',
+    description: 'Tratamientos de la piel',
+    value: 4500,
+    active: false,
+    available_day: 'Jue - Vie',
+    available_from: 10,
+    available_until: 16,
+    image: null,
+    created_at: '2026-01-01T00:00:00Z',
+  },
+]
 
 const baseShift = {
   client_id: '',
@@ -118,6 +184,7 @@ beforeEach(() => {
   vi.mocked(getCancelledShiftsCount).mockResolvedValue(3)
   vi.mocked(getApprovedShiftsCount).mockResolvedValue(10)
   vi.mocked(getSpecialtiesCount).mockResolvedValue(6)
+  vi.mocked(getAllSpecialties).mockResolvedValue(mockSpecialties)
 })
 
 describe('AdminDashboard - ShiftsManagement', () => {
@@ -326,6 +393,94 @@ describe('AdminDashboard - ShiftsManagement', () => {
 
     await waitFor(() => {
       expect(vi.mocked(getAllShifts)).toHaveBeenCalledTimes(2)
+    })
+  })
+})
+
+describe('AdminDashboard - SpecialtiesManagement', () => {
+  function navigateToSpecialties() {
+    const sidebarNav = document.querySelector('nav')
+    const buttons = sidebarNav?.querySelectorAll('button') ?? []
+    const specialtiesBtn = Array.from(buttons).find((b) => b.textContent?.includes('Especialidades'))
+    if (specialtiesBtn) fireEvent.click(specialtiesBtn)
+  }
+
+  it('shows loading spinner while fetching specialties', async () => {
+    vi.mocked(getAllSpecialties).mockReturnValue(new Promise(() => {}))
+
+    renderDashboard()
+
+    navigateToSpecialties()
+
+    expect(screen.getByText('Loader2-icon')).toBeInTheDocument()
+    expect(screen.queryByText('Agregar')).not.toBeInTheDocument()
+  })
+
+  it('renders specialties table after loading', async () => {
+    renderDashboard()
+
+    navigateToSpecialties()
+
+    await waitFor(() => {
+      expect(screen.getByText('Medicina General')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText('Odontología')).toBeInTheDocument()
+    expect(screen.getByText('Dermatología')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /agregar/i })).toBeInTheDocument()
+  })
+
+  it('shows empty state when no specialties exist', async () => {
+    vi.mocked(getAllSpecialties).mockResolvedValue([])
+
+    renderDashboard()
+
+    navigateToSpecialties()
+
+    await waitFor(() => {
+      expect(screen.getByText('No hay especialidades registradas')).toBeInTheDocument()
+    })
+  })
+
+  it('opens AddSpecialtyModal when clicking Agregar', async () => {
+    renderDashboard()
+
+    navigateToSpecialties()
+
+    await waitFor(() => {
+      expect(screen.getByText('Medicina General')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByTestId('add-specialty-modal')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar/i }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-specialty-modal')).toBeInTheDocument()
+    })
+  })
+
+  it('reloads specialties when modal triggers onCreated', async () => {
+    renderDashboard()
+
+    navigateToSpecialties()
+
+    await waitFor(() => {
+      expect(screen.getByText('Medicina General')).toBeInTheDocument()
+    })
+
+    expect(vi.mocked(getAllSpecialties)).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar/i }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('add-specialty-modal')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId('modal-created-btn'))
+
+    await waitFor(() => {
+      expect(vi.mocked(getAllSpecialties)).toHaveBeenCalledTimes(2)
     })
   })
 })

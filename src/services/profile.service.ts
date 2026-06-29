@@ -35,3 +35,27 @@ export async function getSpecialties(): Promise<Specialty[]> {
 
   return (data ?? []) as Specialty[]
 }
+
+export async function getAllSpecialties(): Promise<Specialty[]> {
+  const { data } = await supabase
+    .from('specialty')
+    .select('*')
+    .order('name')
+
+  return (data ?? []) as Specialty[]
+}
+
+export async function createSpecialty(
+  specialtyData: Omit<Specialty, 'id' | 'created_at'>,
+): Promise<{ success: boolean }> {
+  const { data, error } = await supabase.functions.invoke('create-specialty', {
+    body: specialtyData,
+  })
+
+  if (error) {
+    const body = (error as { context?: { body?: { error?: string } } })?.context?.body
+    throw new Error(body?.error ?? error.message)
+  }
+
+  return data as { success: boolean }
+}
