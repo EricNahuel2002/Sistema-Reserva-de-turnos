@@ -133,6 +133,10 @@ El proyecto tiene **dos sistemas de tests**:
 
 Actualmente desplegado en: https://sistema-reserva-de-turnos.vercel.app/
 
+## Nota
+
+- Si se desea directamente probar a registrar un administrador sin configurar nada, la clave es Homero123.
+
 ## Diagrama entidad-relación
 
 <img width="1538" height="807" alt="supabase-schema" src="https://github.com/user-attachments/assets/9e3d7c0e-f6d9-4e4c-964c-abfe92106eac" />
