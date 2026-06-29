@@ -276,9 +276,6 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
 
       <div className={`flex items-center gap-4 text-gray-500 text-xs ${compact ? 'mt-2.5' : 'mt-3'}`}>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-yellow-400" /> Pendiente
-        </span>
-        <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-green-500" /> Aprobado
         </span>
       </div>
