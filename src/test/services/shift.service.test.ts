@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { createShift, getAllShifts, assignShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../../services/shift.service'
+import { createShift, getAllShifts, assignShift, cancelShift, getShiftsByDateRange, getClientShifts, getPendingShiftsCount, getCancelledShiftsCount, getApprovedShiftsCount } from '../../services/shift.service'
 import type { Shift, ShiftWithDetails } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
@@ -163,6 +163,51 @@ describe('assignShift', () => {
   })
 })
 
+describe('cancelShift', () => {
+  it('invokes cancel-shift edge function with shift_id only', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true }, error: null })
+
+    const result = await cancelShift('shift-1')
+
+    expect(result).toEqual({ success: true })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('cancel-shift', {
+      body: { shift_id: 'shift-1', admin_notes: undefined },
+    })
+  })
+
+  it('invokes cancel-shift with admin_notes', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true }, error: null })
+
+    const result = await cancelShift('shift-1', 'Cancelado por inasistencia')
+
+    expect(result).toEqual({ success: true })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('cancel-shift', {
+      body: { shift_id: 'shift-1', admin_notes: 'Cancelado por inasistencia' },
+    })
+  })
+
+  it('throws when edge function returns an error with context body', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: {
+        message: 'Failed to invoke function',
+        context: { status: 400, body: { error: 'El turno ya está cancelado' } },
+      },
+    })
+
+    await expect(cancelShift('shift-1')).rejects.toThrow('El turno ya está cancelado')
+  })
+
+  it('falls back to error.message when context.body.error is missing', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null,
+      error: { message: 'Network error' },
+    })
+
+    await expect(cancelShift('shift-1')).rejects.toThrow('Network error')
+  })
+})
+
 describe('getShiftsByDateRange', () => {
   function createMockChain(opts: { data?: unknown; error?: Error | null }) {
     const error = opts.error ?? null
@@ -280,35 +325,32 @@ describe('getApprovedShiftsCount', () => {
   })
 })
 
-describe('getTodayShiftsCount', () => {
-  it('returns the count of today shifts', async () => {
-    const count = 3
-    const neq = vi.fn().mockResolvedValue({ count, data: null, error: null })
-    const eq = vi.fn(() => ({ neq }))
+describe('getCancelledShiftsCount', () => {
+  it('returns the count of cancelled shifts', async () => {
+    const count = 2
+    const eq = vi.fn().mockResolvedValue({ count, data: null, error: null })
     vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
-    const result = await getTodayShiftsCount()
+    const result = await getCancelledShiftsCount()
 
-    expect(result).toBe(3)
+    expect(result).toBe(2)
     expect(supabase.from).toHaveBeenCalledWith('shift')
   })
 
-  it('returns 0 when no shifts today', async () => {
-    const neq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
-    const eq = vi.fn(() => ({ neq }))
+  it('returns 0 when no cancelled shifts', async () => {
+    const eq = vi.fn().mockResolvedValue({ count: 0, data: null, error: null })
     vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
-    const result = await getTodayShiftsCount()
+    const result = await getCancelledShiftsCount()
 
     expect(result).toBe(0)
   })
 
   it('throws when supabase query fails', async () => {
-    const neq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
-    const eq = vi.fn(() => ({ neq }))
+    const eq = vi.fn().mockResolvedValue({ count: null, data: null, error: new Error('Database error') })
     vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ eq })) } as unknown as MockSupabaseFrom)
 
-    await expect(getTodayShiftsCount()).rejects.toThrow('Database error')
+    await expect(getCancelledShiftsCount()).rejects.toThrow('Database error')
   })
 })
 

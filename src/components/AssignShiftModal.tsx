@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { ShiftWithDetails } from '../types'
-import { assignShift, getShiftsByDateRange } from '../services/shift.service'
-import { X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react'
+import { assignShift, cancelShift, getShiftsByDateRange } from '../services/shift.service'
+import { X, ChevronLeft, ChevronRight, AlertCircle, XCircle, Loader2 } from 'lucide-react'
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
@@ -74,6 +74,7 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(shift?.assigned_date ?? null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [monthShifts, setMonthShifts] = useState<ShiftWithDetails[]>([])
   const [monthLoading, setMonthLoading] = useState(false)
@@ -178,6 +179,21 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al asignar el horario')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleCancelConfirm = async () => {
+    setSubmitting(true)
+    try {
+      await cancelShift(shift.id)
+      setShowConfirmCancel(false)
+      onClose()
+      onAssigned()
+    } catch (err) {
+      setShowConfirmCancel(false)
+      setError(err instanceof Error ? err.message : 'Error al cancelar el turno')
     } finally {
       setSubmitting(false)
     }
@@ -391,30 +407,91 @@ export function AssignShiftModal({ shift, open, onClose, onAssigned }: Props) {
               )}
 
               {/* Submit */}
-              <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
+              <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
                 <button
-                  onClick={onClose}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowConfirmCancel(true)}
+                  className="flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
                 >
-                  Cancelar
+                  <XCircle className="h-4 w-4" />
+                  Cancelar Turno
                 </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={!selectedDate || !selectedTime || submitting}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {submitting ? 'Asignando...' : 'Asignar Horario'}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={onClose}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!selectedDate || !selectedTime || submitting}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {submitting ? 'Asignando...' : 'Asignar Horario'}
+                  </button>
+                </div>
               </div>
             </>
+          ) : shift.status === 'approved' ? (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="mb-4 text-center text-sm text-gray-500">
+                Este turno ya fue aprobado y tiene un horario asignado.
+              </div>
+              <button
+                onClick={() => setShowConfirmCancel(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                <XCircle className="h-4 w-4" />
+                Cancelar Turno
+              </button>
+            </div>
           ) : (
             <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center text-sm text-gray-500">
-              {shift.status === 'approved'
-                ? 'Este turno ya fue aprobado y tiene un horario asignado.'
-                : 'Este turno fue cancelado.'}
+              Este turno fue cancelado.
             </div>
           )}
         </div>
+
+        {/* Confirm cancel modal */}
+        {showConfirmCancel && (
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center rounded-xl bg-black/40"
+            onClick={() => setShowConfirmCancel(false)}
+          >
+            <div
+              className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900">Cancelar Turno</h3>
+              {submitting ? (
+                <div className="flex flex-col items-center py-6">
+                  <Loader2 className="h-8 w-8 animate-spin text-red-600" />
+                  <p className="mt-3 text-sm text-gray-600">Cancelando turno...</p>
+                </div>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-gray-600">
+                    ¿Estás seguro de que querés cancelar este turno?
+                  </p>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      onClick={() => setShowConfirmCancel(false)}
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Volver
+                    </button>
+                    <button
+                      onClick={handleCancelConfirm}
+                      className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                    >
+                      Sí, cancelar turno
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
