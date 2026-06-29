@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '../../lib/supabase'
-import { getProfile, getSpecialties, getSpecialtiesCount } from '../../services/profile.service'
+import { getProfile, getSpecialties, getSpecialtiesCount, getAllSpecialties, createSpecialty } from '../../services/profile.service'
 import type { Profile, Specialty } from '../../types'
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
   },
 }))
 
@@ -115,5 +118,73 @@ describe('getSpecialties', () => {
     const result = await getSpecialties()
 
     expect(result).toEqual([])
+  })
+})
+
+describe('getAllSpecialties', () => {
+  it('returns all specialties without active filter', async () => {
+    const specialties = [
+      mockSpecialty(),
+      mockSpecialty({ id: 'spec-2', name: 'Dermatología', active: false }),
+    ]
+    const order = vi.fn().mockResolvedValue({ data: specialties, error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ order })) } as unknown as MockSupabaseFrom)
+
+    const result = await getAllSpecialties()
+
+    expect(result).toEqual(specialties)
+    expect(supabase.from).toHaveBeenCalledWith('specialty')
+  })
+
+  it('returns empty array when no specialties', async () => {
+    const order = vi.fn().mockResolvedValue({ data: [], error: null })
+    vi.mocked(supabase.from).mockReturnValue({ select: vi.fn(() => ({ order })) } as unknown as MockSupabaseFrom)
+
+    const result = await getAllSpecialties()
+
+    expect(result).toEqual([])
+  })
+})
+
+describe('createSpecialty', () => {
+  const mockSpecialtyData = {
+    name: 'Nueva Especialidad',
+    description: 'Descripción',
+    value: 5000,
+    available_day: 'Lun - Vie',
+    available_from: 8,
+    available_until: 17,
+    image: null,
+    active: true,
+  }
+
+  it('returns success on happy path', async () => {
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: { success: true }, error: null })
+
+    const result = await createSpecialty(mockSpecialtyData)
+
+    expect(result).toEqual({ success: true })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('create-specialty', {
+      body: mockSpecialtyData,
+    })
+  })
+
+  it('throws when invoke fails with context body error', async () => {
+    const invokeError = {
+      context: { body: { error: 'Solo administradores pueden crear especialidades' } },
+      message: 'Forbidden',
+    }
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: null, error: invokeError })
+
+    await expect(createSpecialty(mockSpecialtyData)).rejects.toThrow(
+      'Solo administradores pueden crear especialidades',
+    )
+  })
+
+  it('throws with generic message when no context body', async () => {
+    const invokeError = new Error('Network error')
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: null, error: invokeError })
+
+    await expect(createSpecialty(mockSpecialtyData)).rejects.toThrow('Network error')
   })
 })
