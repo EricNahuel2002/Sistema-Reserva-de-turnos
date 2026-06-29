@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAllShifts, getPendingShiftsCount, getTodayShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
+import { getAllShifts, getPendingShiftsCount, getCancelledShiftsCount, getApprovedShiftsCount } from '../services/shift.service'
 import { getSpecialtiesCount } from '../services/profile.service'
 import { LoadingSpinner } from '../components/ui/LoadingSpinner'
 import { AssignShiftModal } from '../components/AssignShiftModal'
@@ -12,7 +12,7 @@ import {
   Menu,
   X as XIcon,
   Clock,
-  CalendarDays,
+  XCircle,
   CheckCircle,
   Pencil,
   Trash2,
@@ -137,8 +137,8 @@ function ShiftsManagement() {
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [pendingCount, setPendingCount] = useState<number | null>(null)
   const [pendingLoading, setPendingLoading] = useState(true)
-  const [todayCount, setTodayCount] = useState<number | null>(null)
-  const [todayLoading, setTodayLoading] = useState(true)
+  const [cancelledCount, setCancelledCount] = useState<number | null>(null)
+  const [cancelledLoading, setCancelledLoading] = useState(true)
   const [approvedCount, setApprovedCount] = useState<number | null>(null)
   const [approvedLoading, setApprovedLoading] = useState(true)
   const [specialtiesCount, setSpecialtiesCount] = useState<number | null>(null)
@@ -160,10 +160,10 @@ function ShiftsManagement() {
       .catch(() => setPendingCount(0))
       .finally(() => setPendingLoading(false))
 
-    getTodayShiftsCount()
-      .then(setTodayCount)
-      .catch(() => setTodayCount(0))
-      .finally(() => setTodayLoading(false))
+    getCancelledShiftsCount()
+      .then(setCancelledCount)
+      .catch(() => setCancelledCount(0))
+      .finally(() => setCancelledLoading(false))
 
     getApprovedShiftsCount()
       .then(setApprovedCount)
@@ -209,13 +209,13 @@ function ShiftsManagement() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Turnos Hoy</p>
+              <p className="text-sm text-gray-500">Turnos Cancelados</p>
               <p className="mt-1 text-2xl font-bold text-gray-900">
-                {todayLoading ? '—' : todayCount}
+                {cancelledLoading ? '—' : cancelledCount}
               </p>
             </div>
-            <div className="rounded-lg bg-blue-50 p-3">
-              <CalendarDays className="h-6 w-6 text-blue-600" />
+            <div className="rounded-lg bg-red-50 p-3">
+              <XCircle className="h-6 w-6 text-red-600" />
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent, within } from '@testing-library/rea
 import {
   getAllShifts,
   getPendingShiftsCount,
-  getTodayShiftsCount,
+  getCancelledShiftsCount,
   getApprovedShiftsCount,
 } from '../../services/shift.service'
 import { getSpecialtiesCount } from '../../services/profile.service'
@@ -48,7 +48,7 @@ vi.mock('lucide-react', () => ({
   Search: () => 'Search-icon',
   Menu: () => 'Menu-icon',
   Clock: () => 'Clock-icon',
-  CalendarDays: () => 'CalendarDays-icon',
+  XCircle: () => 'XCircle-icon',
   CheckCircle: () => 'CheckCircle-icon',
   ChevronRight: () => 'ChevronRight-icon',
   AlertCircle: () => 'AlertCircle-icon',
@@ -115,7 +115,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(getAllShifts).mockResolvedValue(mockShifts)
   vi.mocked(getPendingShiftsCount).mockResolvedValue(5)
-  vi.mocked(getTodayShiftsCount).mockResolvedValue(3)
+  vi.mocked(getCancelledShiftsCount).mockResolvedValue(3)
   vi.mocked(getApprovedShiftsCount).mockResolvedValue(10)
   vi.mocked(getSpecialtiesCount).mockResolvedValue(6)
 })
@@ -138,7 +138,7 @@ describe('AdminDashboard - ShiftsManagement', () => {
     })
 
     expect(screen.getByText('Turnos Pendientes')).toBeInTheDocument()
-    expect(screen.getByText('Turnos Hoy')).toBeInTheDocument()
+    expect(screen.getByText('Turnos Cancelados')).toBeInTheDocument()
     expect(screen.getByText('Turnos Aprobados')).toBeInTheDocument()
     expect(screen.getByText('Especialidades')).toBeInTheDocument()
 

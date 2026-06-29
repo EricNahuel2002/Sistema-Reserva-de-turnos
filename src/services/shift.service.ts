@@ -79,13 +79,11 @@ export async function getApprovedShiftsCount(): Promise<number> {
   return count ?? 0
 }
 
-export async function getTodayShiftsCount(): Promise<number> {
-  const today = new Date().toISOString().split('T')[0]
+export async function getCancelledShiftsCount(): Promise<number> {
   const { count, error } = await supabase
     .from('shift')
     .select('*', { count: 'exact', head: true })
-    .eq('assigned_date', today)
-    .neq('status', 'cancelled')
+    .eq('status', 'cancelled')
 
   if (error) throw error
   return count ?? 0
