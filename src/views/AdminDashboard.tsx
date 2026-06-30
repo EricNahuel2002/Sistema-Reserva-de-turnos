@@ -15,8 +15,7 @@ import {
   Clock,
   XCircle,
   CheckCircle,
-  Pencil,
-  Trash2,
+
   ChevronRight,
   AlertCircle,
   Filter,
@@ -428,7 +427,6 @@ function SpecialtiesManagement() {
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Precio</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Disponibilidad</th>
                   <th className="px-4 py-3 text-center font-medium text-gray-500">Activo</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -447,16 +445,7 @@ function SpecialtiesManagement() {
                         className={`inline-block h-5 w-5 rounded-full ${specialty.active ? 'bg-green-500' : 'bg-gray-300'}`}
                       />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" title="Editar">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-lg p-1.5 text-red-500 hover:bg-red-50" title="Eliminar">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+
                   </tr>
                 ))}
               </tbody>
