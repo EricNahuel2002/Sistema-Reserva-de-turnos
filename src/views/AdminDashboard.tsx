@@ -152,9 +152,7 @@ function ShiftsManagement() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    loadShifts()
-
+  const loadMetrics = () => {
     getPendingShiftsCount()
       .then(setPendingCount)
       .catch(() => setPendingCount(0))
@@ -174,6 +172,16 @@ function ShiftsManagement() {
       .then(setSpecialtiesCount)
       .catch(() => setSpecialtiesCount(0))
       .finally(() => setSpecialtiesLoading(false))
+  }
+
+  const handleAssigned = () => {
+    loadShifts()
+    loadMetrics()
+  }
+
+  useEffect(() => {
+    loadShifts()
+    loadMetrics()
   }, [])
 
   const filteredShifts = shifts.filter((shift) => {
@@ -366,7 +374,7 @@ function ShiftsManagement() {
           setShowAssignModal(false)
           setSelectedShift(null)
         }}
-        onAssigned={loadShifts}
+        onAssigned={handleAssigned}
       />
     </div>
   )

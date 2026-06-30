@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent, within } from '@testing-library/react'
+import { act } from 'react'
 import {
   getAllShifts,
   getPendingShiftsCount,
@@ -190,6 +191,10 @@ beforeEach(() => {
 describe('AdminDashboard - ShiftsManagement', () => {
   it('shows loading spinner while fetching shifts', async () => {
     vi.mocked(getAllShifts).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getPendingShiftsCount).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getCancelledShiftsCount).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getApprovedShiftsCount).mockReturnValue(new Promise(() => {}))
+    vi.mocked(getSpecialtiesCount).mockReturnValue(new Promise(() => {}))
 
     renderDashboard()
 
@@ -391,9 +396,11 @@ describe('AdminDashboard - ShiftsManagement', () => {
 
     fireEvent.click(screen.getByTestId('modal-assigned-btn'))
 
-    await waitFor(() => {
-      expect(vi.mocked(getAllShifts)).toHaveBeenCalledTimes(2)
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
     })
+
+    expect(vi.mocked(getAllShifts)).toHaveBeenCalledTimes(2)
   })
 })
 
