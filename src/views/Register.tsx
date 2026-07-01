@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerClient } from '../services/auth.service'
 import { SubmitButton } from '../components/ui/SubmitButton'
+import { SuccessModal } from '../components/ui/SuccessModal'
 import { User, FileText, Mail, Lock } from 'lucide-react'
 
 export function Register() {
@@ -12,6 +13,7 @@ export function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,7 +22,7 @@ export function Register() {
 
     try {
       await registerClient(email, password, fullName, dni)
-      navigate('/dashboard')
+      setShowSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
     } finally {
@@ -28,8 +30,18 @@ export function Register() {
     }
   }
 
+  const handleSuccessClose = () => navigate('/dashboard')
+
   return (
-    <div className="flex min-h-[80vh] items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 px-4">
+    <>
+      {showSuccess && (
+        <SuccessModal
+          title="¡Registro exitoso!"
+          subtitle="Redirigiendo al inicio de sesión..."
+          onClose={handleSuccessClose}
+        />
+      )}
+      <div className="flex min-h-[80vh] items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 px-4">
       <div className="w-full max-w-md space-y-6 rounded-2xl bg-white/80 p-8 shadow-lg backdrop-blur-sm">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Crear cuenta</h1>
@@ -103,6 +115,7 @@ export function Register() {
           </Link>
         </p>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

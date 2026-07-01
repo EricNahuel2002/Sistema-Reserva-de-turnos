@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { SubmitButton } from '../components/ui/SubmitButton'
+import { SuccessModal } from '../components/ui/SuccessModal'
 
 export function AdminRegister() {
   const navigate = useNavigate()
@@ -11,6 +12,7 @@ export function AdminRegister() {
   const [adminCode, setAdminCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +35,7 @@ export function AdminRegister() {
         throw new Error(data.error ?? 'Error al crear administrador')
       }
 
-      navigate('/login')
+      setShowSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
     } finally {
@@ -41,8 +43,18 @@ export function AdminRegister() {
     }
   }
 
+  const handleSuccessClose = () => navigate('/login')
+
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4">
+    <>
+      {showSuccess && (
+        <SuccessModal
+          title="¡Registro exitoso!"
+          subtitle="Redirigiendo al inicio de sesión..."
+          onClose={handleSuccessClose}
+        />
+      )}
+      <div className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Registro de Administrador</h1>
@@ -114,6 +126,7 @@ export function AdminRegister() {
           </Link>
         </p>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
