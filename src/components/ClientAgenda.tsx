@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { getClientShifts } from '../services/shift.service'
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import type { ShiftWithDetails } from '../types'
@@ -69,6 +69,8 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
   const [error, setError] = useState<string | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [blinking, setBlinking] = useState(false)
+  const prevApprovedCount = useRef(0)
 
   const shifts = propShifts ?? internalShifts
   const loading = propLoading ?? internalLoading
@@ -85,6 +87,41 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
       .catch((err) => setError(err instanceof Error ? err.message : 'Error al cargar turnos'))
       .finally(() => setInternalLoading(false))
   }, [propShifts])
+
+  useEffect(() => {
+    const count = shifts.filter((s) => s.status === 'approved').length
+    if (count > prevApprovedCount.current) {
+      setBlinking(true)
+    }
+    prevApprovedCount.current = Math.max(prevApprovedCount.current, count)
+  }, [shifts])
+
+  useEffect(() => {
+    if (!blinking) return
+    const handler = () => setBlinking(false)
+    const timeout = setTimeout(handler, 5000)
+    document.addEventListener('click', handler)
+    return () => {
+      document.removeEventListener('click', handler)
+      clearTimeout(timeout)
+    }
+  }, [blinking])
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await getClientShifts()
+        const count = fresh.filter((s) => s.status === 'approved').length
+        if (count > prevApprovedCount.current) {
+          setBlinking(true)
+        }
+        prevApprovedCount.current = Math.max(prevApprovedCount.current, count)
+      } catch {
+        // polling error, ignore
+      }
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   const monthShiftsMap = useMemo(() => {
     const map = new Map<string, ShiftWithDetails[]>()
@@ -152,7 +189,8 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
   return (
     <div className={compact ? '' : 'mb-8'}>
       {!compact && <h2 className="mb-4 text-xl font-semibold text-gray-900">Mi Agenda</h2>}
-      <div className="rounded-xl bg-white shadow-sm">
+      <div className={`rounded-xl bg-white shadow-sm${blinking ? ' animate-pulse-shadow' : ''}`}>
+        <style>{`@keyframes pulse-shadow { 0%,100% { box-shadow: 0 1px 3px rgba(0,0,0,0.1); } 50% { box-shadow: 0 0 0 2px rgba(34,197,94,0.5); } } .animate-pulse-shadow { animation: pulse-shadow 0.6s ease-in-out infinite; }`}</style>
         <div className={`flex items-center justify-between border-b border-gray-200 ${compact ? 'px-4 py-2.5' : 'px-6 py-4'}`}>
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-blue-600" />
