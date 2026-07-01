@@ -74,6 +74,10 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
 
   const shifts = propShifts ?? internalShifts
   const loading = propLoading ?? internalLoading
+  const approvedCount = useMemo(
+    () => shifts.filter((s) => s.status === 'approved' && s.assigned_date && s.assigned_date >= toDateString(new Date())).length,
+    [shifts],
+  )
 
   useEffect(() => {
     if (propShifts) {
@@ -268,7 +272,7 @@ export function ClientAgenda({ shifts: propShifts, loading: propLoading, compact
         {compact && !selectedDate && shifts.length > 0 && (
           <div className="border-t border-gray-200 px-4 py-3">
             <p className="text-sm text-gray-600">
-              Tenés {shifts.length} turno{shifts.length !== 1 ? 's' : ''} próximo{shifts.length !== 1 ? 's' : ''}
+              Tenés {approvedCount} turno{approvedCount !== 1 ? 's' : ''} próximo{approvedCount !== 1 ? 's' : ''}
             </p>
           </div>
         )}
